@@ -16,7 +16,7 @@ namespace StudioRental_Markov.Controllers
             _db = db;
         }
 
-        // GET: api/studios - получить все студии
+        // все студии
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -26,7 +26,7 @@ namespace StudioRental_Markov.Controllers
             return Ok(studios);
         }
 
-        // GET: api/studios/5 - получить студию по id
+        // получить студию по id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -40,7 +40,7 @@ namespace StudioRental_Markov.Controllers
             return Ok(studio);
         }
 
-        // POST: api/studios - создать студию
+        // создать студию
         [HttpPost]
         public async Task<IActionResult> Create(Studio studio)
         {
@@ -50,7 +50,7 @@ namespace StudioRental_Markov.Controllers
             return Ok(studio);
         }
 
-        // PUT: api/studios/5 - обновить студию
+        // обновить студию
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Studio studio)
         {
@@ -62,7 +62,7 @@ namespace StudioRental_Markov.Controllers
             return Ok(studio);
         }
 
-        // DELETE: api/studios/5 - удалить студию
+        // удалить студию
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -17,7 +17,7 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-
+        // вывод всех
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -29,7 +29,7 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-
+        // вывод Id
         [HttpGet("studio/{studioId}")]
         public async Task<IActionResult> GetByStudio(int studioId)
         {
@@ -42,6 +42,7 @@ namespace StudioRental_Markov.Controllers
 
 
 
+        // вывод для пользователя
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId)
         {
@@ -53,7 +54,7 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-
+        // создание бронирования
         [HttpPost]
         public async Task<IActionResult> Create(Booking booking)
         {
@@ -84,7 +85,7 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-
+        // отмена брони
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> Cancel(int id)
         {
@@ -98,7 +99,7 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-
+        // подтверждение
         [HttpPut("{id}/confirm")]
         public async Task<IActionResult> Confirm(int id)
         {
