@@ -16,7 +16,8 @@ namespace StudioRental_Markov.Controllers
             _db = db;
         }
 
-        // GET: api/users - получить всех пользователей
+
+        // получение всех
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -24,8 +25,11 @@ namespace StudioRental_Markov.Controllers
             return Ok(users);
         }
 
-        // GET: api/users/5 - получить пользователя по id
+
+
+
         [HttpGet("{id}")]
+        // получение по Id
         public async Task<IActionResult> GetById(int id)
         {
             var user = await _db.Users.FindAsync(id);
@@ -34,8 +38,10 @@ namespace StudioRental_Markov.Controllers
             return Ok(user);
         }
 
-        // POST: api/users/register - регистрация
+
+        
         [HttpPost("register")]
+        // регистрация
         public async Task<IActionResult> Register(User user)
         {
             // Проверяем email
@@ -44,15 +50,17 @@ namespace StudioRental_Markov.Controllers
                 return BadRequest("Email уже используется");
 
             user.CreatedAt = DateTime.Now;
-            user.PasswordHash = user.PasswordHash; // В реальном проекте нужно хешировать!
+            user.Password = user.Password;
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
             return Ok(user);
         }
 
-        // DELETE: api/users/5 - удалить пользователя
+
+
         [HttpDelete("{id}")]
+        //удаление
         public async Task<IActionResult> Delete(int id)
         {
             var user = await _db.Users.FindAsync(id);

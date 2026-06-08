@@ -16,7 +16,8 @@ namespace StudioRental_Markov.Controllers
             _db = db;
         }
 
-        // GET: api/bookings - получить все бронирования
+
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -27,7 +28,8 @@ namespace StudioRental_Markov.Controllers
             return Ok(bookings);
         }
 
-        // GET: api/bookings/studio/5 - бронирования конкретной студии
+
+
         [HttpGet("studio/{studioId}")]
         public async Task<IActionResult> GetByStudio(int studioId)
         {
@@ -38,7 +40,8 @@ namespace StudioRental_Markov.Controllers
             return Ok(bookings);
         }
 
-        // GET: api/bookings/user/5 - бронирования конкретного пользователя
+
+
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId)
         {
@@ -49,11 +52,12 @@ namespace StudioRental_Markov.Controllers
             return Ok(bookings);
         }
 
-        // POST: api/bookings - создать бронирование
+
+
         [HttpPost]
         public async Task<IActionResult> Create(Booking booking)
         {
-            // Проверяем доступность студии
+            // Проверяем доступность
             var isAvailable = !await _db.Bookings.AnyAsync(b =>
                 b.StudioId == booking.StudioId &&
                 b.Status != "Canceled" &&
@@ -63,7 +67,7 @@ namespace StudioRental_Markov.Controllers
             if (!isAvailable)
                 return BadRequest("Студия уже забронирована на это время");
 
-            // Получаем студию для расчета цены
+            // Получаем студию
             var studio = await _db.Studios.FindAsync(booking.StudioId);
             if (studio == null)
                 return BadRequest("Студия не найдена");
@@ -79,7 +83,8 @@ namespace StudioRental_Markov.Controllers
             return Ok(booking);
         }
 
-        // PUT: api/bookings/5/cancel - отменить бронирование
+
+
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> Cancel(int id)
         {
@@ -92,7 +97,8 @@ namespace StudioRental_Markov.Controllers
             return Ok(booking);
         }
 
-        // PUT: api/bookings/5/confirm - подтвердить бронирование
+
+
         [HttpPut("{id}/confirm")]
         public async Task<IActionResult> Confirm(int id)
         {

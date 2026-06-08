@@ -13,7 +13,7 @@ namespace StudioRental_Markov.Models
 
         [Required]
         [MaxLength(255)]
-        public string PasswordHash { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(100)]
@@ -23,7 +23,7 @@ namespace StudioRental_Markov.Models
         public string? Phone { get; set; }
 
         [MaxLength(50)]
-        public string Role { get; set; } = "User"; // Admin, Owner, User
+        public string Role { get; set; } = "User";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

@@ -18,16 +18,14 @@ namespace StudioRental_Markov.Models
         public decimal TotalPrice { get; set; }
 
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // Pending, Confirmed, Canceled, Completed
+        public string Status { get; set; } = "Pending"; 
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // Внешние ключи
         public int CustomerId { get; set; }
 
         public int StudioId { get; set; }
 
-        // Навигационные свойства
         [ForeignKey(nameof(CustomerId))]
         public virtual User? Customer { get; set; }
 
