@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
 using StudioRental_Markov.Models;
+using Swashbuckle.Swagger.Annotations;
 
 namespace StudioRental_Markov.Controllers
 {
@@ -16,7 +17,9 @@ namespace StudioRental_Markov.Controllers
             _db = db;
         }
 
-        // все студии
+        /// <summary>
+        /// Вывод всех студий
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -26,7 +29,9 @@ namespace StudioRental_Markov.Controllers
             return Ok(studios);
         }
 
-        // получить студию по id
+        /// <summary>
+        /// Вывод студии по Id
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -40,7 +45,9 @@ namespace StudioRental_Markov.Controllers
             return Ok(studio);
         }
 
-        // создать студию
+        /// <summary>
+        /// Создание новой студии
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Create(Studio studio)
         {
@@ -50,7 +57,9 @@ namespace StudioRental_Markov.Controllers
             return Ok(studio);
         }
 
-        // обновить студию
+        /// <summary>
+        /// Обновление студии
+        /// </summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Studio studio)
         {
@@ -62,7 +71,9 @@ namespace StudioRental_Markov.Controllers
             return Ok(studio);
         }
 
-        // удалить студию
+        /// <summary>
+        /// Удалаение студии
+        /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

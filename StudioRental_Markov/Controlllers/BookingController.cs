@@ -2,10 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
 using StudioRental_Markov.Models;
+using Swashbuckle.Swagger.Annotations;
 
 namespace StudioRental_Markov.Controllers
 {
     [ApiController]
+    /// <summary>
+    /// Управление бронированиями
+    /// </summary>
     [Route("api/[controller]")]
     public class BookingsController : ControllerBase
     {
@@ -17,7 +21,9 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        // вывод всех
+        /// <summary>
+        /// Вывод всех бронирований
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -29,7 +35,9 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        // вывод Id
+        /// <summary>
+        /// Вывод бронирований по Id
+        /// </summary>
         [HttpGet("studio/{studioId}")]
         public async Task<IActionResult> GetByStudio(int studioId)
         {
@@ -42,7 +50,9 @@ namespace StudioRental_Markov.Controllers
 
 
 
-        // вывод для пользователя
+        /// <summary>
+        /// Вывод бронирований пользователя
+        /// </summary>
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId)
         {
@@ -54,7 +64,9 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        // создание бронирования
+        /// <summary>
+        /// Создание нового бронирования
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Create(Booking booking)
         {
@@ -85,7 +97,9 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        // отмена брони
+        /// <summary>
+        /// Отмена существующего бронирования
+        /// </summary>
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> Cancel(int id)
         {
@@ -99,7 +113,9 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        // подтверждение
+        /// <summary>
+        /// Подтверждение существующего бронирования
+        /// </summary>
         [HttpPut("{id}/confirm")]
         public async Task<IActionResult> Confirm(int id)
         {

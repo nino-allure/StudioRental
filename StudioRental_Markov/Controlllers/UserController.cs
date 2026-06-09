@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
 using StudioRental_Markov.Models;
+using Swashbuckle.Swagger.Annotations;
 
 namespace StudioRental_Markov.Controllers
 {
@@ -17,7 +18,9 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        // получение всех
+        /// <summary>
+        /// Вывод всех пользователей
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -27,9 +30,10 @@ namespace StudioRental_Markov.Controllers
 
 
 
-
+        /// <summary>
+        /// Вывод пользователей по Id
+        /// </summary>
         [HttpGet("{id}")]
-        // получение по Id
         public async Task<IActionResult> GetById(int id)
         {
             var user = await _db.Users.FindAsync(id);
@@ -39,9 +43,10 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-        
+        /// <summary>
+        /// Регистрация пользователя
+        /// </summary>
         [HttpPost("register")]
-        // регистрация
         public async Task<IActionResult> Register(User user)
         {
             // Проверяем email
@@ -58,9 +63,10 @@ namespace StudioRental_Markov.Controllers
         }
 
 
-
+        /// <summary>
+        /// Удаление пользователя
+        /// </summary>
         [HttpDelete("{id}")]
-        //удаление
         public async Task<IActionResult> Delete(int id)
         {
             var user = await _db.Users.FindAsync(id);

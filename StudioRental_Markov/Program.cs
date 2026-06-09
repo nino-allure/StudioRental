@@ -1,11 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
+});
 
 var connectionString = "Server=localhost;Port=3306;Database=StudioRental;User=root;Password=;";
 builder.Services.AddDbContext<AppDbContext>(options =>
