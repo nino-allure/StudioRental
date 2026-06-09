@@ -1,0 +1,39 @@
+﻿@model List<StudioRentalWeb.Models.Studio>
+
+@{
+    ViewData["Title"] = "Студии";
+}
+
+<div class="container">
+    <h1 class="section-title">Доступные студии</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 32px;">Выберите идеальную студию для вашего проекта</p>
+
+    @if (!Model.Any())
+    {
+        <div style="text-align: center; padding: 60px;">
+            <p style="font-size: 18px; color: var(--text-secondary);">Студии пока не добавлены</p>
+        </div>
+    }
+    else
+    {
+        <div class="card-grid">
+            @foreach (var studio in Model)
+            {
+                <a href="/Studios/Details/@studio.Id" class="card">
+                    <div class="card-image">
+                        <img src="/img/gear.jpg alt="Alternate Text" />
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">@studio.Name</div>
+                        <div class="card-address">@studio.Address</div>
+                        <div class="card-price">@studio.PricePerHour.ToString("C") / час</div>
+                        @if (!string.IsNullOrEmpty(studio.Description))
+                        {
+                            <p style="margin-top: 12px; color: var(--text-secondary); font-size: 14px;">@(studio.Description.Length > 80 ? studio.Description.Substring(0, 80) + "..." : studio.Description)</p>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</div>

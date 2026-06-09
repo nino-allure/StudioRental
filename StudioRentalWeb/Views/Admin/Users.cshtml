@@ -1,0 +1,53 @@
+﻿@model List<StudioRentalWeb.Models.User>
+
+@{
+    ViewData["Title"] = "Управление пользователями";
+}
+
+<div class="container">
+    <h1 class="section-title">Пользователи</h1>
+
+    <div class="admin-nav">
+        <a href="/Admin">Главная</a>
+        <a href="/Admin/Users" class="active">Пользователи</a>
+        <a href="/Admin/Studios">Студии</a>
+        <a href="/Admin/Bookings">Бронирования</a>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ФИО</th>
+                    <th>Email</th>
+                    <th>Телефон</th>
+                    <th>Роль</th>
+                    <th>Дата регистрации</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.Id</td>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>@(user.Phone ?? "-")</td>
+                        <td>@user.Role</td>
+                        <td>@user.CreatedAt.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            @if (user.Role != "Admin")
+                            {
+                                <form method="post" action="/Admin/DeleteUser/@user.Id" onsubmit="return confirm('Удалить пользователя?')">
+                                    <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;">Удалить</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

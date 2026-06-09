@@ -1,0 +1,58 @@
+﻿@model List<StudioRentalWeb.Models.Booking>
+
+@{
+    ViewData["Title"] = "Мои бронирования";
+}
+
+<div class="container">
+    <h1 class="section-title">Мои бронирования</h1>
+
+    @if (!Model.Any())
+    {
+        <div style="text-align: center; padding: 60px; background: var(--surface); border-radius: 20px;">
+            <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 20px;">У вас пока нет бронирований</p>
+            <a href="/Studios" class="btn btn-primary">Найти студию</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Студия</th>
+                        <th>Дата и время начала</th>
+                        <th>Дата и время окончания</th>
+                        <th>Стоимость</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var booking in Model)
+                    {
+                        <tr>
+                            <td><strong>@booking.Studio?.Name</strong></td>
+                            <td>@booking.StartTime.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@booking.EndTime.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@booking.TotalPrice.ToString("C")</td>
+                            <td>
+                                <span class="status-badge status-@booking.Status.ToLower()">
+                                    @(booking.Status == "Pending" ? "Ожидает" : booking.Status == "Confirmed" ? "Подтверждено" : "Отменено")
+                                </span>
+                            </td>
+                            <td>
+                                @if (booking.Status == "Pending")
+                                {
+                                    <form method="post" action="/Bookings/Cancel/@booking.Id" style="display: inline;">
+                                        <button type="submit" class="btn-danger" style="background: none; border: none; color: var(--danger); cursor: pointer;">Отменить</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

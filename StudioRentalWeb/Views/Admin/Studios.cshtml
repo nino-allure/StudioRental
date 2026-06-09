@@ -1,0 +1,50 @@
+﻿@model List<StudioRentalWeb.Models.Studio>
+
+@{
+    ViewData["Title"] = "Управление студиями";
+}
+
+<div class="container">
+    <h1 class="section-title">Студии</h1>
+
+    <div class="admin-nav">
+        <a href="/Admin">Главная</a>
+        <a href="/Admin/Users">Пользователи</a>
+        <a href="/Admin/Studios" class="active">Студии</a>
+        <a href="/Admin/Bookings">Бронирования</a>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Адрес</th>
+                    <th>Цена/час</th>
+                    <th>Владелец</th>
+                    <th>Дата создания</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var studio in Model)
+                {
+                        <tr>
+                            <td>@studio.Id</td>
+                            <td>@studio.Name</td>
+                            <td>@(studio.Address.Length > 30 ? studio.Address.Substring(0, 30) + "..." : studio.Address)</td>
+                            <td>@studio.PricePerHour.ToString("C")</td>
+                            <td>@studio.Owner?.FullName ?? "-"</td>
+                            <td>@studio.CreatedAt.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                <form method="post" action="/Admin/DeleteStudio/@studio.Id" onsubmit="return confirm('Удалить студию?')">
+                                    <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

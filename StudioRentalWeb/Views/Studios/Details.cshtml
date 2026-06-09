@@ -1,0 +1,48 @@
+﻿@model StudioRentalWeb.Models.Studio
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container">
+    <div class="studio-header">
+        <div>
+            <h1 class="section-title" style="margin-top: 0;">@Model.Name</h1>
+            <p style="color: var(--text-secondary);">@Model.Address</p>
+        </div>
+        <div class="studio-price">@Model.PricePerHour.ToString("C") / час</div>
+    </div>
+
+    <div style="background: var(--surface); border-radius: 20px; overflow: hidden; margin-bottom: 24px;">
+        <div style="height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 80px;">
+            <img src="img/headphones.png" alt="Alternate Text" />
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        <div>
+            <h3 style="font-weight: 600; margin-bottom: 12px;">Описание</h3>
+            <p style="color: var(--text-secondary); line-height: 1.6;">@(Model.Description ?? "Описание отсутствует")</p>
+        </div>
+        <div>
+            <div class="booking-form">
+                <h3 style="font-weight: 600; margin-bottom: 20px;">Забронировать студию</h3>
+                <form method="post" action="/Bookings/Create">
+                    <input type="hidden" name="studioId" value="@Model.Id">
+
+                    <div class="form-group">
+                        <label>Дата и время начала</label>
+                        <input type="datetime-local" name="startTime" class="form-control" required min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Дата и время окончания</label>
+                        <input type="datetime-local" name="endTime" class="form-control" required min="@DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm")">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Забронировать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

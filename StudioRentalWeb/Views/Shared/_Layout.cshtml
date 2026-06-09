@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudioRental - Аренда студий звукозаписи</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        <nav class="navbar">
+            <div class="container">
+                <a href="/" class="logo">StudioRental</a>
+                <div class="nav-links">
+                    <a href="/Studios">Студии</a>
+                    <a href="/Bookings/MyBookings">Мои бронирования</a>
+                    @if (Context.Session.GetString("UserRole") == "Admin")
+                    {
+                        <a href="/Admin">Админ панель</a>
+                    }
+                    <div class="user-info">
+                        <span class="user-name">@Context.Session.GetString("UserName")</span>
+                        <form method="post" action="/Account/Logout" style="display: inline;">
+                            <button type="submit" class="btn-logout">Выйти</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    }
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>StudioRental - Аренда студий звукозаписи</p>
+        </div>
+    </footer>
+
+    @if (TempData["Success"] != null)
+    {
+        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+            <div class="alert alert-success">@TempData["Success"]</div>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+            <div class="alert alert-error">@TempData["Error"]</div>
+        </div>
+    }
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
