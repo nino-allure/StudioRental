@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
 using StudioRental_Markov.Models;
-using Swashbuckle.Swagger.Annotations;
 
 namespace StudioRental_Markov.Controllers
 {
@@ -18,19 +17,29 @@ namespace StudioRental_Markov.Controllers
         }
 
         /// <summary>
-        /// Вывод всех студий
+        /// Получение списка всех доступных студий с информацией об их владельцах.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var studios = await _db.Studios
-                .Include(s => s.Owner)
-                .ToListAsync();
-            return Ok(studios);
+            try
+            {
+                var studios = await _db.Studios
+                    .Include(s => s.Owner)
+                    .ToListAsync();
+
+                Console.WriteLine($"Found {studios.Count} studios");
+                return Ok(studios);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
         }
 
         /// <summary>
-        /// Вывод студии по Id
+        /// Получение детальной информации о конкретной студии по её идентификатору.
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -43,47 +52,6 @@ namespace StudioRental_Markov.Controllers
                 return NotFound();
 
             return Ok(studio);
-        }
-
-        /// <summary>
-        /// Создание новой студии
-        /// </summary>
-        [HttpPost]
-        public async Task<IActionResult> Create(Studio studio)
-        {
-            studio.CreatedAt = DateTime.Now;
-            _db.Studios.Add(studio);
-            await _db.SaveChangesAsync();
-            return Ok(studio);
-        }
-
-        /// <summary>
-        /// Обновление студии
-        /// </summary>
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Studio studio)
-        {
-            if (id != studio.Id)
-                return BadRequest();
-
-            _db.Entry(studio).State = EntityState.Modified;
-            await _db.SaveChangesAsync();
-            return Ok(studio);
-        }
-
-        /// <summary>
-        /// Удалаение студии
-        /// </summary>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var studio = await _db.Studios.FindAsync(id);
-            if (studio == null)
-                return NotFound();
-
-            _db.Studios.Remove(studio);
-            await _db.SaveChangesAsync();
-            return Ok();
         }
     }
 }

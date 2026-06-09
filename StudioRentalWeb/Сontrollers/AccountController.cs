@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StudioRentalWeb.Models;
 using StudioRentalWeb.Services;
-using System.Text.Json;
 
 namespace StudioRentalWeb.Controllers
 {
@@ -32,21 +31,25 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
-            var users = await _api.GetAsync<List<User>>("Users");
-            var user = users?.FirstOrDefault(u => u.Email == model.Email);
+            var response = await _api.PostAsync<LoginResponseDto>("Auth/login", new
+            {
+                email = model.Email,
+                password = model.Password
+            });
 
-            if (user == null)
+            if (response == null)
             {
                 ModelState.AddModelError("", "Неверный email или пароль");
                 return View(model);
             }
 
-            HttpContext.Session.SetString("UserId", user.Id.ToString());
-            HttpContext.Session.SetString("UserName", user.FullName);
-            HttpContext.Session.SetString("UserRole", user.Role);
-            HttpContext.Session.SetString("UserEmail", user.Email);
+            HttpContext.Session.SetString("UserId", response.UserId.ToString());
+            HttpContext.Session.SetString("UserName", response.FullName);
+            HttpContext.Session.SetString("UserRole", response.Role);
+            HttpContext.Session.SetString("UserEmail", response.Email);
+            HttpContext.Session.SetString("JwtToken", response.Token);
 
-            if (user.Role == "Admin")
+            if (response.Role == "Admin")
             {
                 return RedirectToAction("Index", "Admin");
             }
@@ -72,36 +75,27 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
-            var users = await _api.GetAsync<List<User>>("Users");
-            if (users?.Any(u => u.Email == model.Email) == true)
+            var response = await _api.PostAsync<LoginResponseDto>("Auth/register", new
             {
-                ModelState.AddModelError("Email", "Email уже используется");
+                email = model.Email,
+                password = model.Password,
+                fullName = model.FullName,
+                phone = model.Phone
+            });
+
+            if (response == null)
+            {
+                ModelState.AddModelError("", "Ошибка при регистрации. Email может быть уже занят.");
                 return View(model);
             }
 
-            var newUser = new
-            {
-                Email = model.Email,
-                Password = model.Password,
-                FullName = model.FullName,
-                Phone = model.Phone,
-                Role = "User",
-                CreatedAt = DateTime.Now
-            };
+            HttpContext.Session.SetString("UserId", response.UserId.ToString());
+            HttpContext.Session.SetString("UserName", response.FullName);
+            HttpContext.Session.SetString("UserRole", response.Role);
+            HttpContext.Session.SetString("UserEmail", response.Email);
+            HttpContext.Session.SetString("JwtToken", response.Token);
 
-            var created = await _api.PostAsync<User>("Users/register", newUser);
-
-            if (created != null)
-            {
-                HttpContext.Session.SetString("UserId", created.Id.ToString());
-                HttpContext.Session.SetString("UserName", created.FullName);
-                HttpContext.Session.SetString("UserRole", created.Role);
-                HttpContext.Session.SetString("UserEmail", created.Email);
-                return RedirectToAction("Index", "Home");
-            }
-
-            ModelState.AddModelError("", "Ошибка при регистрации");
-            return View(model);
+            return RedirectToAction("Index", "Home");
         }
 
         public IActionResult Logout()

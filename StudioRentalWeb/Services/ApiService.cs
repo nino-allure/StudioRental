@@ -15,10 +15,21 @@ namespace StudioRentalWeb.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
+        private void AddAuthorizationHeader()
+        {
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JwtToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+        }
+
         public async Task<T?> GetAsync<T>(string endpoint)
         {
             try
             {
+                AddAuthorizationHeader();
                 var response = await _httpClient.GetAsync($"{BaseUrl}/{endpoint}");
                 if (response.IsSuccessStatusCode)
                 {
@@ -37,18 +48,22 @@ namespace StudioRentalWeb.Services
         {
             try
             {
+                AddAuthorizationHeader();
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync($"{BaseUrl}/{endpoint}", content);
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
                     return JsonConvert.DeserializeObject<T>(responseContent);
                 }
                 return default;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error: {ex.Message}");
                 return default;
             }
         }
@@ -57,6 +72,7 @@ namespace StudioRentalWeb.Services
         {
             try
             {
+                AddAuthorizationHeader();
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PutAsync($"{BaseUrl}/{endpoint}", content);
@@ -72,32 +88,13 @@ namespace StudioRentalWeb.Services
         {
             try
             {
+                AddAuthorizationHeader();
                 var response = await _httpClient.DeleteAsync($"{BaseUrl}/{endpoint}");
                 return response.IsSuccessStatusCode;
             }
             catch
             {
                 return false;
-            }
-        }
-
-        public async Task<T?> PutAndGetAsync<T>(string endpoint, object data)
-        {
-            try
-            {
-                var json = JsonConvert.SerializeObject(data);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PutAsync($"{BaseUrl}/{endpoint}", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<T>(responseContent);
-                }
-                return default;
-            }
-            catch
-            {
-                return default;
             }
         }
     }

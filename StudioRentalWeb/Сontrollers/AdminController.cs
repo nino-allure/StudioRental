@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StudioRentalWeb.Models;
+using StudioRentalWeb.Models;      // ← ЭТА СТРОКА ВАЖНА!
 using StudioRentalWeb.Services;
 
 namespace StudioRentalWeb.Controllers
@@ -16,7 +16,8 @@ namespace StudioRentalWeb.Controllers
         private bool IsAdmin()
         {
             var role = HttpContext.Session.GetString("UserRole");
-            return role == "Admin";
+            var token = HttpContext.Session.GetString("JwtToken");
+            return role == "Admin" && !string.IsNullOrEmpty(token);
         }
 
         public async Task<IActionResult> Index()
