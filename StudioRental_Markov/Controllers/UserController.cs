@@ -8,6 +8,7 @@ namespace StudioRental_Markov.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")] 
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -17,7 +18,6 @@ namespace StudioRental_Markov.Controllers
             _db = db;
         }
 
-        // Убираем [Authorize] временно для теста
         /// <summary>
         /// Получение списка всех зарегистрированных пользователей без отображения их паролей.
         /// </summary>
@@ -66,6 +66,25 @@ namespace StudioRental_Markov.Controllers
                 user.Role,
                 user.CreatedAt
             });
+        }
+
+        /// <summary>
+        /// Удаление пользователя
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null)
+                return NotFound();
+
+            if (user.Role == "Admin")
+                return BadRequest("Нельзя удалить администратора");
+
+            _db.Users.Remove(user);
+            await _db.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }

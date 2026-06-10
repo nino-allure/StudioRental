@@ -9,6 +9,17 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Добавляем CORS (ВАЖНО!)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -42,9 +53,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "SuperSecureSecretForRentalService!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "SuperSecureSecretForRentalService";
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "StudioRentalAPI";
+var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "StudioRentalWeb";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -57,7 +68,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtAudience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
             ClockSkew = TimeSpan.Zero
         };
     });
@@ -65,13 +76,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                       "Server=localhost;Port=3306;Database=StudioRental;User=root;Password=;";
+                       "Server=localhost;Database=StudioRental;User=root;Password=;";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddScoped<JwtService>();
 
 var app = builder.Build();
+
+// Используем CORS
+app.UseCors("AllowAll");
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -100,9 +115,11 @@ using (var scope = app.Services.CreateScope())
         };
         db.Users.Add(admin);
         db.SaveChanges();
-        Console.WriteLine("admin@studiorental.com / admin123");
+        Console.WriteLine("=== АДМИН СОЗДАН ===");
+        Console.WriteLine("Email: admin@studiorental.com");
+        Console.WriteLine("Password: admin123");
+        Console.WriteLine("===================");
     }
-
-    Console.WriteLine("База данных готова");
 }
+
 app.Run();

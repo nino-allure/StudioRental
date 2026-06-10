@@ -14,7 +14,6 @@ namespace StudioRental_Markov.Models
 
         [Required]
         [MaxLength(255)]
-        [JsonIgnore]
         public string Password { get; set; } = string.Empty;
 
         [Required]

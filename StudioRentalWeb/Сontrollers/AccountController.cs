@@ -70,8 +70,17 @@ namespace StudioRentalWeb.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            Console.WriteLine($"=== REGISTER VIA WEB ===");
+            Console.WriteLine($"Email: {model.Email}");
+            Console.WriteLine($"FullName: {model.FullName}");
+            Console.WriteLine($"Password: {model.Password}");
+
             if (!ModelState.IsValid)
             {
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    Console.WriteLine($"Model Error: {error.ErrorMessage}");
+                }
                 return View(model);
             }
 
@@ -80,7 +89,7 @@ namespace StudioRentalWeb.Controllers
                 email = model.Email,
                 password = model.Password,
                 fullName = model.FullName,
-                phone = model.Phone
+                phone = model.Phone ?? ""
             });
 
             if (response == null)
@@ -94,6 +103,8 @@ namespace StudioRentalWeb.Controllers
             HttpContext.Session.SetString("UserRole", response.Role);
             HttpContext.Session.SetString("UserEmail", response.Email);
             HttpContext.Session.SetString("JwtToken", response.Token);
+
+            Console.WriteLine($"Registration successful! UserId: {response.UserId}");
 
             return RedirectToAction("Index", "Home");
         }

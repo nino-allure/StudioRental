@@ -17,7 +17,8 @@ namespace StudioRental_Markov.Services
 
         public string GenerateToken(User user)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "SuperSecureSecretForRentalService"));
+            var secret = _configuration["JwtSettings:Secret"] ?? "SuperSecureSecretForRentalService";
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
@@ -28,11 +29,13 @@ namespace StudioRental_Markov.Services
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
+            var expirationMinutes = int.Parse(_configuration["JwtSettings:ExpirationMinutes"] ?? "60");
+
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
+                issuer: _configuration["JwtSettings:Issuer"],
+                audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.Now.AddMinutes(expirationMinutes),
                 signingCredentials: credentials
             );
 

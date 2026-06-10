@@ -20,8 +20,39 @@ namespace StudioRentalWeb.Services
             var token = _httpContextAccessor.HttpContext?.Session.GetString("JwtToken");
             if (!string.IsNullOrEmpty(token))
             {
-                _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+            }
+        }
+
+        public async Task<T?> PostAsync<T>(string endpoint, object data)
+        {
+            try
+            {
+                var json = JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                Console.WriteLine($"=== API POST REQUEST ===");
+                Console.WriteLine($"URL: {BaseUrl}/{endpoint}");
+                Console.WriteLine($"Data: {json}");
+
+                var response = await _httpClient.PostAsync($"{BaseUrl}/{endpoint}", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Response Status: {response.StatusCode}");
+                Console.WriteLine($"Response Content: {responseContent}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return JsonConvert.DeserializeObject<T>(responseContent);
+                }
+
+                return default;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"POST Error: {ex.Message}");
+                return default;
             }
         }
 
@@ -31,6 +62,7 @@ namespace StudioRentalWeb.Services
             {
                 AddAuthorizationHeader();
                 var response = await _httpClient.GetAsync($"{BaseUrl}/{endpoint}");
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
@@ -40,30 +72,6 @@ namespace StudioRentalWeb.Services
             }
             catch
             {
-                return default;
-            }
-        }
-
-        public async Task<T?> PostAsync<T>(string endpoint, object data)
-        {
-            try
-            {
-                AddAuthorizationHeader();
-                var json = JsonConvert.SerializeObject(data);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync($"{BaseUrl}/{endpoint}", content);
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return JsonConvert.DeserializeObject<T>(responseContent);
-                }
-                return default;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
                 return default;
             }
         }

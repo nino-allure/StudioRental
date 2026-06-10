@@ -20,33 +20,28 @@
 
             <form method="post" asp-action="Register">
                 <div class="form-group">
-                    <label asp-for="FullName">ФИО</label>
-                    <input asp-for="FullName" class="form-control" placeholder="Иванов Иван Иванович">
-                    <span asp-validation-for="FullName" class="text-danger" style="color: var(--danger); font-size: 12px;"></span>
+                    <label>ФИО</label>
+                    <input name="FullName" class="form-control" placeholder="Иванов Иван Иванович" required>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Email">Email</label>
-                    <input asp-for="Email" class="form-control" type="email" placeholder="your@email.com">
-                    <span asp-validation-for="Email" class="text-danger" style="color: var(--danger); font-size: 12px;"></span>
+                    <label>Email</label>
+                    <input name="Email" class="form-control" type="email" placeholder="your@email.com" required>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Phone">Телефон (опционально)</label>
-                    <input asp-for="Phone" class="form-control" placeholder="+7 (999) 123-45-67">
-                    <span asp-validation-for="Phone" class="text-danger" style="color: var(--danger); font-size: 12px;"></span>
+                    <label>Телефон (опционально)</label>
+                    <input name="Phone" class="form-control" placeholder="+7 (999) 123-45-67">
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Password">Пароль</label>
-                    <input asp-for="Password" class="form-control" type="password" placeholder="Минимум 6 символов">
-                    <span asp-validation-for="Password" class="text-danger" style="color: var(--danger); font-size: 12px;"></span>
+                    <label>Пароль</label>
+                    <input name="Password" class="form-control" type="password" placeholder="Минимум 6 символов" required>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="ConfirmPassword">Подтверждение пароля</label>
-                    <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Повторите пароль">
-                    <span asp-validation-for="ConfirmPassword" class="text-danger" style="color: var(--danger); font-size: 12px;"></span>
+                    <label>Подтверждение пароля</label>
+                    <input name="ConfirmPassword" class="form-control" type="password" placeholder="Повторите пароль" required>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
@@ -57,5 +52,8 @@
             </div>
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
 </body>
 </html>

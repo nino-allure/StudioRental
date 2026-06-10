@@ -19,22 +19,30 @@ namespace StudioRental_Markov.Controllers
             _jwtService = jwtService;
         }
 
-        /// <summary>
-        /// Регистрация нового пользователя в системе с автоматической генерацией JWT-токена.
-        /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            // проверка существование пользователя
+            Console.WriteLine($"=== REGISTER REQUEST ===");
+            Console.WriteLine($"Email: {request.Email}");
+            Console.WriteLine($"FullName: {request.FullName}");
+            Console.WriteLine($"Password: {request.Password}");
+
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.FullName))
+            {
+                return BadRequest(new { message = "Все поля обязательны" });
+            }
+
             var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (existingUser != null)
+            {
                 return BadRequest(new { message = "Email уже используется" });
+            }
 
             var user = new User
             {
                 Email = request.Email,
                 FullName = request.FullName,
-                Phone = request.Phone,
+                Phone = request.Phone ?? "",
                 Role = "User",
                 CreatedAt = DateTime.Now,
                 Password = request.Password
@@ -43,8 +51,9 @@ namespace StudioRental_Markov.Controllers
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            // генерация JWT
             var token = _jwtService.GenerateToken(user);
+
+            Console.WriteLine($"User created with ID: {user.Id}");
 
             return Ok(new LoginResponseDto
             {
@@ -56,20 +65,24 @@ namespace StudioRental_Markov.Controllers
             });
         }
 
-        /// <summary>
-        /// Аутентификация пользователя по Email и паролю с выдачей JWT-токена.
-        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
+            Console.WriteLine($"=== LOGIN REQUEST ===");
+            Console.WriteLine($"Email: {request.Email}");
+            Console.WriteLine($"Password: {request.Password}");
+
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
+            {
                 return Unauthorized(new { message = "Неверный email или пароль" });
+            }
 
             if (user.Password != request.Password)
+            {
                 return Unauthorized(new { message = "Неверный email или пароль" });
+            }
 
-            // генер JWT токен
             var token = _jwtService.GenerateToken(user);
 
             return Ok(new LoginResponseDto
