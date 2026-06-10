@@ -12,32 +12,40 @@ namespace StudioRental_Markov.Controllers
     {
         private readonly AppDbContext _db;
         private readonly JwtService _jwtService;
+        private readonly LoggingService _logging; // Сервис логирования
 
-        public AuthController(AppDbContext db, JwtService jwtService)
+        public AuthController(AppDbContext db, JwtService jwtService, LoggingService logging)
         {
             _db = db;
             _jwtService = jwtService;
+            _logging = logging; // Инициализация сервиса логирования
         }
 
+        /// <summary>
+        /// Регистрация нового пользователя
+        /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            Console.WriteLine($"=== REGISTER REQUEST ===");
-            Console.WriteLine($"Email: {request.Email}");
-            Console.WriteLine($"FullName: {request.FullName}");
-            Console.WriteLine($"Password: {request.Password}");
+            // Логируем попытку регистрации
+            await _logging.LogAuthAsync("Register", $"Попытка регистрации для email: {request.Email}", false);
 
+            // Валидация входных данных
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.FullName))
             {
+                await _logging.LogAuthAsync("Register", $"Ошибка регистрации: не все поля заполнены для {request.Email}", false);
                 return BadRequest(new { message = "Все поля обязательны" });
             }
 
+            // Проверка на существующего пользователя
             var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (existingUser != null)
             {
+                await _logging.LogAuthAsync("Register", $"Ошибка регистрации: email {request.Email} уже используется", false);
                 return BadRequest(new { message = "Email уже используется" });
             }
 
+            // Создание нового пользователя
             var user = new User
             {
                 Email = request.Email,
@@ -45,15 +53,18 @@ namespace StudioRental_Markov.Controllers
                 Phone = request.Phone ?? "",
                 Role = "User",
                 CreatedAt = DateTime.Now,
-                Password = request.Password
+                Password = request.Password // В реальном проекте нужно хешировать!
             };
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
+            // Генерация JWT токена
             var token = _jwtService.GenerateToken(user);
 
-            Console.WriteLine($"User created with ID: {user.Id}");
+            // Логируем успешную регистрацию
+            await _logging.LogAuthAsync("Register", $"Пользователь {request.Email} успешно зарегистрирован", true,
+                $"UserId: {user.Id}, FullName: {user.FullName}");
 
             return Ok(new LoginResponseDto
             {
@@ -65,25 +76,37 @@ namespace StudioRental_Markov.Controllers
             });
         }
 
+        /// <summary>
+        /// Вход пользователя в систему
+        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            Console.WriteLine($"=== LOGIN REQUEST ===");
-            Console.WriteLine($"Email: {request.Email}");
-            Console.WriteLine($"Password: {request.Password}");
+            // Логируем попытку входа
+            await _logging.LogAuthAsync("Login", $"Попытка входа для email: {request.Email}", false);
 
+            // Поиск пользователя по email
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
+                await _logging.LogAuthAsync("Login", $"Неудачная попытка входа: пользователь {request.Email} не найден", false);
                 return Unauthorized(new { message = "Неверный email или пароль" });
             }
 
+            // Проверка пароля (в реальном проекте используйте хеширование)
             if (user.Password != request.Password)
             {
+                await _logging.LogAuthAsync("Login", $"Неудачная попытка входа: неверный пароль для {request.Email}", false,
+                    $"UserId: {user.Id}");
                 return Unauthorized(new { message = "Неверный email или пароль" });
             }
 
+            // Генерация токена
             var token = _jwtService.GenerateToken(user);
+
+            // Логируем успешный вход
+            await _logging.LogAuthAsync("Login", $"Пользователь {request.Email} успешно вошел в систему", true,
+                $"UserId: {user.Id}, Role: {user.Role}");
 
             return Ok(new LoginResponseDto
             {

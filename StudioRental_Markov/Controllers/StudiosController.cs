@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
 using StudioRental_Markov.Models;
+using StudioRental_Markov.Services;
 
 namespace StudioRental_Markov.Controllers
 {
@@ -11,14 +12,17 @@ namespace StudioRental_Markov.Controllers
     public class StudiosController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly LoggingService _logging; // Сервис логирования
 
-        public StudiosController(AppDbContext db)
+        public StudiosController(AppDbContext db, LoggingService logging)
         {
             _db = db;
+            _logging = logging; // Инициализация сервиса логирования
         }
 
         /// <summary>
         /// Получение списка всех доступных студий с информацией об их владельцах.
+        /// Доступно без авторизации.
         /// </summary>
         [HttpGet]
         [AllowAnonymous]
@@ -27,7 +31,7 @@ namespace StudioRental_Markov.Controllers
             try
             {
                 var studios = await _db.Studios
-                    .Include(s => s.Owner) 
+                    .Include(s => s.Owner)
                     .Select(s => new
                     {
                         s.Id,
@@ -48,12 +52,14 @@ namespace StudioRental_Markov.Controllers
                     })
                     .ToListAsync();
 
-                Console.WriteLine($"Found {studios.Count} studios");
+                // Логируем получение списка студий (без个人信息)
+                await _logging.LogInfoAsync("Studio", "GetAll", $"Получен список студий. Количество: {studios.Count}");
+
                 return Ok(studios);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                await _logging.LogErrorAsync("Studio", "GetAll", "Ошибка при получении списка студий", ex);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -70,8 +76,12 @@ namespace StudioRental_Markov.Controllers
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (studio == null)
+            {
+                await _logging.LogWarningAsync("Studio", "GetById", $"Студия с ID {id} не найдена");
                 return NotFound();
+            }
 
+            await _logging.LogInfoAsync("Studio", "GetById", $"Получена информация о студии {id}: {studio.Name}");
             return Ok(studio);
         }
 
@@ -83,7 +93,11 @@ namespace StudioRental_Markov.Controllers
         public async Task<IActionResult> Create([FromBody] Studio studio)
         {
             if (!ModelState.IsValid)
+            {
+                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                await _logging.LogWarningAsync("Studio", "Create", $"Ошибка валидации при создании студии: {errors}");
                 return BadRequest(ModelState);
+            }
 
             // Получаем ID текущего пользователя из токена
             var ownerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
@@ -93,6 +107,13 @@ namespace StudioRental_Markov.Controllers
 
             _db.Studios.Add(studio);
             await _db.SaveChangesAsync();
+
+            // Логируем создание студии
+            await _logging.LogStudioAsync("Create", $"Создана новая студия", studio.Id,
+                $"Название: {studio.Name}, " +
+                $"Адрес: {studio.Address}, " +
+                $"Цена: {studio.PricePerHour:C}, " +
+                $"Администратор: {ownerId}");
 
             return Ok(studio);
         }
@@ -104,15 +125,24 @@ namespace StudioRental_Markov.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] Studio updatedStudio)
         {
-            Console.WriteLine($"=== UPDATE STUDIO API CALLED === ID: {id}");
-
             var studio = await _db.Studios.FindAsync(id);
             if (studio == null)
             {
-                Console.WriteLine("Studio not found!");
+                await _logging.LogWarningAsync("Studio", "Update", $"Попытка обновления несуществующей студии {id}");
                 return NotFound(new { message = "Студия не найдена" });
             }
 
+            // Сохраняем старые значения для логирования изменений
+            var oldValues = new
+            {
+                studio.Name,
+                studio.Description,
+                studio.Address,
+                studio.PricePerHour,
+                studio.ImageUrl
+            };
+
+            // Обновляем поля
             studio.Name = updatedStudio.Name;
             studio.Description = updatedStudio.Description;
             studio.Address = updatedStudio.Address;
@@ -121,10 +151,16 @@ namespace StudioRental_Markov.Controllers
 
             await _db.SaveChangesAsync();
 
-            Console.WriteLine("Studio updated successfully!");
+            // Логируем изменения
+            await _logging.LogStudioAsync("Update", $"Обновлена студия", id,
+                $"Изменения: " +
+                $"Название: '{oldValues.Name}' -> '{studio.Name}', " +
+                $"Адрес: '{oldValues.Address}' -> '{studio.Address}', " +
+                $"Цена: {oldValues.PricePerHour:C} -> {studio.PricePerHour:C}");
 
             return Ok(studio);
         }
+
         /// <summary>
         /// Удаление студии (только для администраторов).
         /// </summary>
@@ -134,17 +170,29 @@ namespace StudioRental_Markov.Controllers
         {
             var studio = await _db.Studios.FindAsync(id);
             if (studio == null)
+            {
+                await _logging.LogWarningAsync("Studio", "Delete", $"Попытка удаления несуществующей студии {id}");
                 return NotFound();
+            }
 
             // Проверяем, есть ли активные бронирования
             var hasActiveBookings = await _db.Bookings
                 .AnyAsync(b => b.StudioId == id && b.Status != "Cancelled");
 
             if (hasActiveBookings)
+            {
+                await _logging.LogWarningAsync("Studio", "Delete",
+                    $"Попытка удаления студии {id} ({studio.Name}) с активными бронированиями");
                 return BadRequest(new { message = "Нельзя удалить студию с активными бронированиями" });
+            }
 
+            var studioName = studio.Name;
             _db.Studios.Remove(studio);
             await _db.SaveChangesAsync();
+
+            // Логируем удаление студии
+            await _logging.LogStudioAsync("Delete", $"Удалена студия", id,
+                $"Название: {studioName}, Адрес: {studio.Address}");
 
             return Ok(new { message = "Студия удалена" });
         }

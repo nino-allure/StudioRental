@@ -10,6 +10,7 @@ namespace StudioRental_Markov.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Studio> Studios { get; set; }
         public DbSet<Booking> Bookings { get; set; }
+        public DbSet<SystemLog> SystemLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +28,15 @@ namespace StudioRental_Markov.Data
 
             modelBuilder.Entity<Booking>()
                 .HasIndex(b => b.CustomerId);
+
+            modelBuilder.Entity<SystemLog>()
+                .HasIndex(l => l.CreatedAt);
+
+            modelBuilder.Entity<SystemLog>()
+                .HasIndex(l => l.LogLevel);
+
+            modelBuilder.Entity<SystemLog>()
+                .HasIndex(l => l.Category);
         }
     }
 }

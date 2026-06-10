@@ -85,6 +85,9 @@ builder.Services.AddScoped<JwtService>();
 
 builder.Services.AddScoped<ExcelExportService>();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<LoggingService>();
+
 var app = builder.Build();
 
 // Используем CORS
@@ -93,6 +96,8 @@ app.UseCors("AllowAll");
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
+
+app.UseMiddleware<StudioRental_Markov.Middlewares.GlobalLoggingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

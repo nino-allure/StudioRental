@@ -3,26 +3,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
 using StudioRental_Markov.Models;
+using StudioRental_Markov.Services;
 
 namespace StudioRental_Markov.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]  // Требуем авторизацию
+    [Authorize] // Требуем авторизацию для всех методов
     public class BookingsController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly LoggingService _logging; // Сервис логирования
 
-        public BookingsController(AppDbContext db)
+        public BookingsController(AppDbContext db, LoggingService logging)
         {
             _db = db;
+            _logging = logging; // Инициализация сервиса логирования
         }
 
         /// <summary>
         /// Получение списка всех бронирований в системе с информацией о клиентах и студиях.
+        /// Доступно только для администраторов.
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "Admin")]  // Только для админов
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -32,27 +36,34 @@ namespace StudioRental_Markov.Controllers
                     .Include(b => b.Studio)
                     .ToListAsync();
 
-                Console.WriteLine($"Found {bookings.Count} bookings");
+                // Логируем успешное получение списка бронирований
+                await _logging.LogInfoAsync("Booking", "GetAll", $"Получен список бронирований. Количество: {bookings.Count}");
+
                 return Ok(bookings);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                // Логируем ошибку при получении списка
+                await _logging.LogErrorAsync("Booking", "GetAll", "Ошибка при получении списка бронирований", ex);
                 return StatusCode(500, ex.Message);
             }
         }
 
         /// <summary>
         /// Получение списка всех бронирований конкретного пользователя по его идентификатору.
+        /// Пользователь может видеть только свои бронирования, админ - любые.
         /// </summary>
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId)
         {
+            // Получаем ID текущего пользователя из JWT токена
             var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            // Пользователь может видеть только свои бронирования, админ - любые
+            // Проверка прав доступа: пользователь может видеть только свои бронирования
             if (currentUserId != userId && !User.IsInRole("Admin"))
             {
+                await _logging.LogWarningAsync("Booking", "GetByUser",
+                    $"Попытка несанкционированного доступа к бронированиям пользователя {userId} от пользователя {currentUserId}");
                 return Forbid();
             }
 
@@ -60,6 +71,10 @@ namespace StudioRental_Markov.Controllers
                 .Where(b => b.CustomerId == userId)
                 .Include(b => b.Studio)
                 .ToListAsync();
+
+            await _logging.LogInfoAsync("Booking", "GetByUser",
+                $"Пользователь {currentUserId} запросил свои бронирования. Найдено: {bookings.Count}");
+
             return Ok(bookings);
         }
 
@@ -69,19 +84,57 @@ namespace StudioRental_Markov.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Booking booking)
         {
-            // Проверяем, что пользователь бронирует для себя
+            // Получаем ID текущего пользователя
             var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            // Проверяем, что пользователь бронирует для себя (или админ)
             if (booking.CustomerId != currentUserId && !User.IsInRole("Admin"))
             {
+                await _logging.LogWarningAsync("Booking", "Create",
+                    $"Пользователь {currentUserId} попытался создать бронирование для другого пользователя {booking.CustomerId}");
                 return Forbid();
+            }
+
+            // Проверка существования студии
+            var studio = await _db.Studios.FindAsync(booking.StudioId);
+            if (studio == null)
+            {
+                await _logging.LogWarningAsync("Booking", "Create",
+                    $"Попытка бронирования несуществующей студии. StudioId: {booking.StudioId}, UserId: {currentUserId}");
+                return BadRequest("Студия не найдена");
+            }
+
+            // Проверка корректности дат
+            if (booking.StartTime >= booking.EndTime)
+            {
+                await _logging.LogWarningAsync("Booking", "Create",
+                    $"Некорректные даты бронирования. StartTime: {booking.StartTime}, EndTime: {booking.EndTime}");
+                return BadRequest("Дата начала должна быть меньше даты окончания");
+            }
+
+            if (booking.StartTime < DateTime.Now)
+            {
+                await _logging.LogWarningAsync("Booking", "Create",
+                    $"Попытка бронирования в прошлом. StartTime: {booking.StartTime}");
+                return BadRequest("Нельзя бронировать время в прошлом");
+            }
+
+            // Проверка на пересечение с существующими бронированиями
+            var conflictingBooking = await _db.Bookings
+                .AnyAsync(b => b.StudioId == booking.StudioId
+                    && b.Status != "Cancelled"
+                    && b.StartTime < booking.EndTime
+                    && b.EndTime > booking.StartTime);
+
+            if (conflictingBooking)
+            {
+                await _logging.LogWarningAsync("Booking", "Create",
+                    $"Конфликт бронирований. StudioId: {booking.StudioId}, Время: {booking.StartTime} - {booking.EndTime}");
+                return BadRequest("Выбранное время уже занято");
             }
 
             // Расчет стоимости
             var duration = (booking.EndTime - booking.StartTime).TotalHours;
-            var studio = await _db.Studios.FindAsync(booking.StudioId);
-            if (studio == null)
-                return BadRequest("Студия не найдена");
-
             booking.TotalPrice = (decimal)duration * studio.PricePerHour;
             booking.Status = "Pending";
             booking.CreatedAt = DateTime.Now;
@@ -89,44 +142,98 @@ namespace StudioRental_Markov.Controllers
             _db.Bookings.Add(booking);
             await _db.SaveChangesAsync();
 
+            // Логируем успешное создание бронирования
+            await _logging.LogBookingAsync("Create", $"Создано новое бронирование", booking.Id,
+                $"Студия: {studio.Name} (Id: {booking.StudioId}), " +
+                $"Клиент: {currentUserId}, " +
+                $"Время: {booking.StartTime:yyyy-MM-dd HH:mm} - {booking.EndTime:yyyy-MM-dd HH:mm}, " +
+                $"Длительность: {duration:F1}ч, " +
+                $"Сумма: {booking.TotalPrice:C}");
+
             return Ok(booking);
         }
 
         /// <summary>
-        /// Отмена бронирования
+        /// Отмена бронирования (пользователь или админ)
         /// </summary>
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> Cancel(int id)
         {
-            var booking = await _db.Bookings.FindAsync(id);
-            if (booking == null)
-                return NotFound();
+            var booking = await _db.Bookings
+                .Include(b => b.Studio)
+                .FirstOrDefaultAsync(b => b.Id == id);
 
+            if (booking == null)
+            {
+                await _logging.LogWarningAsync("Booking", "Cancel", $"Попытка отмены несуществующего бронирования {id}");
+                return NotFound();
+            }
+
+            // Проверка прав: только владелец бронирования или админ
             var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             if (booking.CustomerId != currentUserId && !User.IsInRole("Admin"))
             {
+                await _logging.LogWarningAsync("Booking", "Cancel",
+                    $"Пользователь {currentUserId} попытался отменить чужое бронирование {id}");
                 return Forbid();
             }
 
+            // Нельзя отменить уже подтвержденное бронирование, если оно скоро начнется
+            if (booking.Status == "Confirmed" && booking.StartTime < DateTime.Now.AddHours(2))
+            {
+                await _logging.LogWarningAsync("Booking", "Cancel",
+                    $"Попытка отмены подтвержденного бронирования {id} менее чем за 2 часа до начала");
+                return BadRequest("Нельзя отменить подтвержденное бронирование менее чем за 2 часа до начала");
+            }
+
+            var oldStatus = booking.Status;
             booking.Status = "Cancelled";
             await _db.SaveChangesAsync();
+
+            // Логируем отмену бронирования
+            await _logging.LogBookingAsync("Cancel", $"Бронирование отменено", id,
+                $"Студия: {booking.Studio?.Name}, " +
+                $"Статус изменен с {oldStatus} на Cancelled, " +
+                $"Пользователь: {currentUserId}");
 
             return Ok();
         }
 
         /// <summary>
-        /// Подтверждение бронирования (только админ)
+        /// Подтверждение бронирования (только администратор)
         /// </summary>
         [HttpPut("{id}/confirm")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Confirm(int id)
         {
-            var booking = await _db.Bookings.FindAsync(id);
-            if (booking == null)
-                return NotFound();
+            var booking = await _db.Bookings
+                .Include(b => b.Studio)
+                .Include(b => b.Customer)
+                .FirstOrDefaultAsync(b => b.Id == id);
 
+            if (booking == null)
+            {
+                await _logging.LogWarningAsync("Booking", "Confirm", $"Попытка подтверждения несуществующего бронирования {id}");
+                return NotFound();
+            }
+
+            if (booking.Status != "Pending")
+            {
+                await _logging.LogWarningAsync("Booking", "Confirm",
+                    $"Попытка подтверждения бронирования {id} с некорректным статусом {booking.Status}");
+                return BadRequest($"Нельзя подтвердить бронирование со статусом {booking.Status}");
+            }
+
+            var oldStatus = booking.Status;
             booking.Status = "Confirmed";
             await _db.SaveChangesAsync();
+
+            // Логируем подтверждение бронирования
+            await _logging.LogBookingAsync("Confirm", $"Бронирование подтверждено администратором", id,
+                $"Студия: {booking.Studio?.Name}, " +
+                $"Клиент: {booking.Customer?.FullName} (Id: {booking.CustomerId}), " +
+                $"Время: {booking.StartTime:yyyy-MM-dd HH:mm} - {booking.EndTime:yyyy-MM-dd HH:mm}, " +
+                $"Сумма: {booking.TotalPrice:C}");
 
             return Ok();
         }

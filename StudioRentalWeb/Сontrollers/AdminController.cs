@@ -339,5 +339,38 @@ namespace StudioRentalWeb.Controllers
             var fileName = $"Отчет_по_студии_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
             return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Logs()
+        {
+            if (!IsAdmin()) return RedirectToAction("Login", "Account");
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLogs(string? level, string? category, DateTime? from, DateTime? to, int page = 1, int pageSize = 50)
+        {
+            if (!IsAdmin()) return Unauthorized();
+
+            var (data, error) = await _api.GetAsync<dynamic>($"Logs?level={level}&category={category}&from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}&page={page}&pageSize={pageSize}");
+
+            if (error != null)
+                return Json(new { logs = new List<object>(), totalCount = 0 });
+
+            return Json(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLogsStats()
+        {
+            if (!IsAdmin()) return Unauthorized();
+
+            var (data, error) = await _api.GetAsync<dynamic>("Logs/stats");
+
+            if (error != null)
+                return Json(new { totalLogs = 0, errorsLast24h = 0 });
+
+            return Json(data);
+        }
     }
 }
