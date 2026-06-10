@@ -2,10 +2,20 @@
 
 @{
     ViewData["Title"] = "Управление студиями";
+    var isAdmin = Context.Session.GetString("UserRole") == "Admin";
+
+    if (!isAdmin)
+    {
+        Context.Response.Redirect("/Account/Login");
+        return;
+    }
 }
 
 <div class="container">
-    <h1 class="section-title">Студии</h1>
+    <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h1 class="section-title" style="margin-bottom: 0;">Студии</h1>
+        <a href="/Admin/CreateStudio" class="btn btn-primary" style="background: #10b981;">+ Добавить студию</a>
+    </div>
 
     <div class="admin-nav">
         <a href="/Admin">Главная</a>
@@ -14,35 +24,36 @@
         <a href="/Admin/Bookings">Бронирования</a>
     </div>
 
-    <div class="table-container">
-        <table>
+    <div class="table-container" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
             <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Название</th>
-                    <th>Адрес</th>
-                    <th>Цена/час</th>
-                    <th>Владелец</th>
-                    <th>Дата создания</th>
-                    <th>Действия</th>
+                <tr style="background: var(--surface);">
+                    <th style="padding: 12px; text-align: left;">ID</th>
+                    <th style="padding: 12px; text-align: left;">Название</th>
+                    <th style="padding: 12px; text-align: left;">Адрес</th>
+                    <th style="padding: 12px; text-align: left;">Цена/час</th>
+                    <th style="padding: 12px; text-align: left;">Владелец</th>
+                    <th style="padding: 12px; text-align: left;">Действия</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var studio in Model)
                 {
-                        <tr>
-                            <td>@studio.Id</td>
-                            <td>@studio.Name</td>
-                            <td>@(studio.Address.Length > 30 ? studio.Address.Substring(0, 30) + "..." : studio.Address)</td>
-                            <td>@studio.PricePerHour.ToString("C")</td>
-                            <td>@studio.Owner?.FullName ?? "-"</td>
-                            <td>@studio.CreatedAt.ToString("dd.MM.yyyy")</td>
-                            <td>
-                                <form method="post" action="/Admin/DeleteStudio/@studio.Id" onsubmit="return confirm('Удалить студию?')">
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px;">@studio.Id</td>
+                        <td style="padding: 12px;">@studio.Name</td>
+                        <td style="padding: 12px;">@(studio.Address.Length > 30 ? studio.Address.Substring(0, 30) + "..." : studio.Address)</td>
+                        <td style="padding: 12px;">@studio.PricePerHour.ToString("C")</td>
+                        <td style="padding: 12px;">@studio.Owner?.FullName</td>
+                        <td style="padding: 12px;">
+                            <div style="display: flex; gap: 12px;">
+                                <a href="/Admin/EditStudio/@studio.Id" style="color: var(--primary); text-decoration: none;">Редактировать</a>
+                                <form method="post" action="/Admin/DeleteStudio/@studio.Id" onsubmit="return confirm('Удалить студию?')" style="display: inline;">
                                     <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;">Удалить</button>
                                 </form>
-                            </td>
-                        </tr>
+                            </div>
+                        </td>
+                    </tr>
                 }
             </tbody>
         </table>

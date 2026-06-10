@@ -14,6 +14,8 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ApiService>();
+builder.Services.AddScoped<ErrorHandlingService>();
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 

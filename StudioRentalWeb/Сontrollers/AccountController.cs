@@ -7,10 +7,12 @@ namespace StudioRentalWeb.Controllers
     public class AccountController : Controller
     {
         private readonly ApiService _api;
+        private readonly NotificationService _notifications;
 
-        public AccountController(ApiService api)
+        public AccountController(ApiService api, NotificationService notifications)
         {
             _api = api;
+            _notifications = notifications;
         }
 
         [HttpGet]
@@ -31,15 +33,22 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
-            var response = await _api.PostAsync<LoginResponseDto>("Auth/login", new
+            var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/login", new
             {
                 email = model.Email,
                 password = model.Password
             });
 
+            if (apiError != null)
+            {
+                _notifications.AddError(this, apiError.Message ?? "Ошибка при входе");
+                ModelState.AddModelError("", apiError.Message ?? "Неверный email или пароль");
+                return View(model);
+            }
+
             if (response == null)
             {
-                ModelState.AddModelError("", "Неверный email или пароль");
+                _notifications.AddError(this, "Не удалось получить данные пользователя");
                 return View(model);
             }
 
@@ -48,6 +57,8 @@ namespace StudioRentalWeb.Controllers
             HttpContext.Session.SetString("UserRole", response.Role);
             HttpContext.Session.SetString("UserEmail", response.Email);
             HttpContext.Session.SetString("JwtToken", response.Token);
+
+            _notifications.AddSuccess(this, $"Добро пожаловать, {response.FullName}!");
 
             if (response.Role == "Admin")
             {
@@ -70,21 +81,16 @@ namespace StudioRentalWeb.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            Console.WriteLine($"=== REGISTER VIA WEB ===");
-            Console.WriteLine($"Email: {model.Email}");
-            Console.WriteLine($"FullName: {model.FullName}");
-            Console.WriteLine($"Password: {model.Password}");
-
             if (!ModelState.IsValid)
             {
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                foreach (var modelError in ModelState.Values.SelectMany(v => v.Errors))
                 {
-                    Console.WriteLine($"Model Error: {error.ErrorMessage}");
+                    _notifications.AddError(this, modelError.ErrorMessage);
                 }
                 return View(model);
             }
 
-            var response = await _api.PostAsync<LoginResponseDto>("Auth/register", new
+            var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/register", new
             {
                 email = model.Email,
                 password = model.Password,
@@ -92,9 +98,16 @@ namespace StudioRentalWeb.Controllers
                 phone = model.Phone ?? ""
             });
 
+            if (apiError != null)
+            {
+                _notifications.AddError(this, apiError.Message ?? "Ошибка при регистрации");
+                ModelState.AddModelError("", apiError.Message ?? "Email может быть уже занят");
+                return View(model);
+            }
+
             if (response == null)
             {
-                ModelState.AddModelError("", "Ошибка при регистрации. Email может быть уже занят.");
+                _notifications.AddError(this, "Не удалось получить данные пользователя");
                 return View(model);
             }
 
@@ -104,7 +117,7 @@ namespace StudioRentalWeb.Controllers
             HttpContext.Session.SetString("UserEmail", response.Email);
             HttpContext.Session.SetString("JwtToken", response.Token);
 
-            Console.WriteLine($"Registration successful! UserId: {response.UserId}");
+            _notifications.AddSuccess(this, "Регистрация прошла успешно!");
 
             return RedirectToAction("Index", "Home");
         }
@@ -112,6 +125,7 @@ namespace StudioRentalWeb.Controllers
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
+            _notifications.AddInfo(this, "Вы вышли из системы");
             return RedirectToAction("Login", "Account");
         }
     }

@@ -7,10 +7,12 @@ namespace StudioRentalWeb.Controllers
     public class BookingsController : Controller
     {
         private readonly ApiService _api;
+        private readonly NotificationService _notifications;
 
-        public BookingsController(ApiService api)
+        public BookingsController(ApiService api, NotificationService notifications)
         {
             _api = api;
+            _notifications = notifications;
         }
 
         public async Task<IActionResult> MyBookings()
@@ -21,7 +23,13 @@ namespace StudioRentalWeb.Controllers
             }
 
             var userId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
-            var bookings = await _api.GetAsync<List<Booking>>($"Bookings/user/{userId}");
+            var (bookings, error) = await _api.GetAsync<List<Booking>>($"Bookings/user/{userId}");
+
+            if (error != null)
+            {
+                _notifications.AddError(this, error.Message ?? "Ошибка при загрузке бронирований");
+                return View(new List<Booking>());
+            }
 
             ViewBag.UserRole = HttpContext.Session.GetString("UserRole");
             return View(bookings ?? new List<Booking>());
@@ -47,17 +55,15 @@ namespace StudioRentalWeb.Controllers
                 CreatedAt = DateTime.Now
             };
 
-            var result = await _api.PostAsync<Booking>("Bookings", booking);
+            var (result, error) = await _api.PostAsync<Booking>("Bookings", booking);
 
-            if (result != null)
+            if (error != null)
             {
-                TempData["Success"] = "Бронирование создано успешно";
-            }
-            else
-            {
-                TempData["Error"] = "Ошибка при создании бронирования";
+                _notifications.AddError(this, error.Message ?? "Ошибка при создании бронирования");
+                return RedirectToAction("Details", "Studios", new { id = studioId });
             }
 
+            _notifications.AddSuccess(this, "Бронирование создано успешно!");
             return RedirectToAction("MyBookings", "Bookings");
         }
 
@@ -68,15 +74,15 @@ namespace StudioRentalWeb.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var result = await _api.PutAsync($"Bookings/{id}/cancel", new { });
+            var (success, error) = await _api.PutAsync($"Bookings/{id}/cancel", new { });
 
-            if (result)
+            if (error != null)
             {
-                TempData["Success"] = "Бронирование отменено";
+                _notifications.AddError(this, error.Message ?? "Ошибка при отмене бронирования");
             }
             else
             {
-                TempData["Error"] = "Ошибка при отмене бронирования";
+                _notifications.AddSuccess(this, "Бронирование отменено");
             }
 
             return RedirectToAction("MyBookings", "Bookings");

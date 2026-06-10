@@ -27,7 +27,25 @@ namespace StudioRental_Markov.Controllers
             try
             {
                 var studios = await _db.Studios
-                    .Include(s => s.Owner)
+                    .Include(s => s.Owner) 
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.Name,
+                        s.Description,
+                        s.Address,
+                        s.PricePerHour,
+                        s.ImageUrl,
+                        s.IsApproved,
+                        s.CreatedAt,
+                        s.OwnerId,
+                        Owner = s.Owner != null ? new
+                        {
+                            s.Owner.Id,
+                            s.Owner.FullName,
+                            s.Owner.Email
+                        } : null
+                    })
                     .ToListAsync();
 
                 Console.WriteLine($"Found {studios.Count} studios");
@@ -86,9 +104,14 @@ namespace StudioRental_Markov.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] Studio updatedStudio)
         {
+            Console.WriteLine($"=== UPDATE STUDIO API CALLED === ID: {id}");
+
             var studio = await _db.Studios.FindAsync(id);
             if (studio == null)
-                return NotFound();
+            {
+                Console.WriteLine("Studio not found!");
+                return NotFound(new { message = "Студия не найдена" });
+            }
 
             studio.Name = updatedStudio.Name;
             studio.Description = updatedStudio.Description;
@@ -98,9 +121,10 @@ namespace StudioRental_Markov.Controllers
 
             await _db.SaveChangesAsync();
 
+            Console.WriteLine("Studio updated successfully!");
+
             return Ok(studio);
         }
-
         /// <summary>
         /// Удаление студии (только для администраторов).
         /// </summary>

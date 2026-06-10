@@ -33,8 +33,8 @@
                 {
                     <tr>
                         <td>@booking.Id</td>
-                        <td>@booking.Customer?.FullName ?? "-"</td>
-                        <td>@booking.Studio?.Name ?? "-"</td>
+                        <td>@booking.Customer?.FullName </td>
+                        <td>@booking.Studio?.Name </td>
                         <td>@booking.StartTime.ToString("dd.MM.yyyy HH:mm")</td>
                         <td>@booking.EndTime.ToString("dd.MM.yyyy HH:mm")</td>
                         <td>@booking.TotalPrice.ToString("C")</td>

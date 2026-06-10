@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Text;
+using StudioRentalWeb.Services;
 
 namespace StudioRentalWeb.Services
 {
@@ -7,12 +8,14 @@ namespace StudioRentalWeb.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ErrorHandlingService _errorHandling;
         private const string BaseUrl = "https://localhost:7175/api";
 
-        public ApiService(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+        public ApiService(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, ErrorHandlingService errorHandling)
         {
             _httpClient = httpClient;
             _httpContextAccessor = httpContextAccessor;
+            _errorHandling = errorHandling;
         }
 
         private void AddAuthorizationHeader()
@@ -25,38 +28,7 @@ namespace StudioRentalWeb.Services
             }
         }
 
-        public async Task<T?> PostAsync<T>(string endpoint, object data)
-        {
-            try
-            {
-                var json = JsonConvert.SerializeObject(data);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                Console.WriteLine($"=== API POST REQUEST ===");
-                Console.WriteLine($"URL: {BaseUrl}/{endpoint}");
-                Console.WriteLine($"Data: {json}");
-
-                var response = await _httpClient.PostAsync($"{BaseUrl}/{endpoint}", content);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine($"Response Status: {response.StatusCode}");
-                Console.WriteLine($"Response Content: {responseContent}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return JsonConvert.DeserializeObject<T>(responseContent);
-                }
-
-                return default;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"POST Error: {ex.Message}");
-                return default;
-            }
-        }
-
-        public async Task<T?> GetAsync<T>(string endpoint)
+        public async Task<(T? Data, ErrorHandlingService.ApiErrorResponse? Error)> GetAsync<T>(string endpoint)
         {
             try
             {
@@ -66,17 +38,82 @@ namespace StudioRentalWeb.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<T>(content);
+                    var data = JsonConvert.DeserializeObject<T>(content);
+                    return (data, null);
                 }
-                return default;
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (default, error);
+                }
             }
-            catch
+            catch (HttpRequestException ex)
             {
-                return default;
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (default, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (default, error);
             }
         }
 
-        public async Task<bool> PutAsync(string endpoint, object data)
+        public async Task<(T? Data, ErrorHandlingService.ApiErrorResponse? Error)> PostAsync<T>(string endpoint, object data)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+                var json = JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{BaseUrl}/{endpoint}", content);
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<T>(responseContent);
+                    return (result, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (default, error);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (default, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (default, error);
+            }
+        }
+
+        public async Task<(bool Success, ErrorHandlingService.ApiErrorResponse? Error)> PutAsync(string endpoint, object data)
         {
             try
             {
@@ -84,25 +121,75 @@ namespace StudioRentalWeb.Services
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PutAsync($"{BaseUrl}/{endpoint}", content);
-                return response.IsSuccessStatusCode;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (false, error);
+                }
             }
-            catch
+            catch (HttpRequestException ex)
             {
-                return false;
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (false, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (false, error);
             }
         }
 
-        public async Task<bool> DeleteAsync(string endpoint)
+        public async Task<(bool Success, ErrorHandlingService.ApiErrorResponse? Error)> DeleteAsync(string endpoint)
         {
             try
             {
                 AddAuthorizationHeader();
                 var response = await _httpClient.DeleteAsync($"{BaseUrl}/{endpoint}");
-                return response.IsSuccessStatusCode;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (false, error);
+                }
             }
-            catch
+            catch (HttpRequestException ex)
             {
-                return false;
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (false, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (false, error);
             }
         }
     }
