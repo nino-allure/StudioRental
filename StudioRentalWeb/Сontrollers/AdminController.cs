@@ -276,5 +276,68 @@ namespace StudioRentalWeb.Controllers
 
             return RedirectToAction("Bookings");
         }
+        public async Task<IActionResult> ExportStudios()
+        {
+            if (!IsAdmin()) return RedirectToAction("Login", "Account");
+
+            var (data, error) = await _api.DownloadFileAsync("Export/studios");
+
+            if (error != null || data == null)
+            {
+                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте");
+                return RedirectToAction("Studios");
+            }
+
+            var fileName = $"Студии_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        public async Task<IActionResult> ExportBookings()
+        {
+            if (!IsAdmin()) return RedirectToAction("Login", "Account");
+
+            var (data, error) = await _api.DownloadFileAsync("Export/bookings");
+
+            if (error != null || data == null)
+            {
+                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте");
+                return RedirectToAction("Bookings");
+            }
+
+            var fileName = $"Бронирования_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        public async Task<IActionResult> ExportUsers()
+        {
+            if (!IsAdmin()) return RedirectToAction("Login", "Account");
+
+            var (data, error) = await _api.DownloadFileAsync("Export/users");
+
+            if (error != null || data == null)
+            {
+                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте");
+                return RedirectToAction("Users");
+            }
+
+            var fileName = $"Пользователи_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        public async Task<IActionResult> ExportStudioReport(int id)
+        {
+            if (!IsAdmin()) return RedirectToAction("Login", "Account");
+
+            var (data, error) = await _api.DownloadFileAsync($"Export/studio-report/{id}");
+
+            if (error != null || data == null)
+            {
+                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте отчета");
+                return RedirectToAction("Studios");
+            }
+
+            var fileName = $"Отчет_по_студии_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
     }
 }

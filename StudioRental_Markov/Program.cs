@@ -83,6 +83,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<JwtService>();
 
+builder.Services.AddScoped<ExcelExportService>();
+
 var app = builder.Build();
 
 // Используем CORS

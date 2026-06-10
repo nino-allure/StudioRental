@@ -192,5 +192,118 @@ namespace StudioRentalWeb.Services
                 return (false, error);
             }
         }
+        public async Task<(string? FilePath, ErrorHandlingService.ApiErrorResponse? Error)> DownloadFileToDownloadsAsync(string endpoint, string fileName)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+                var response = await _httpClient.GetAsync($"{BaseUrl}/{endpoint}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadAsByteArrayAsync();
+
+                    // Получаем путь к папке Загрузки (работает на всех версиях .NET)
+                    string downloadsPath;
+
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        // Windows
+                        downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    }
+                    else
+                    {
+                        // Linux/Mac
+                        downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Downloads");
+                    }
+
+                    // Создаем папку если её нет
+                    if (!Directory.Exists(downloadsPath))
+                        Directory.CreateDirectory(downloadsPath);
+
+                    // Генерируем уникальное имя файла, если такой уже существует
+                    var fullPath = Path.Combine(downloadsPath, fileName);
+                    int counter = 1;
+                    while (System.IO.File.Exists(fullPath))
+                    {
+                        var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                        var extension = Path.GetExtension(fileName);
+                        fullPath = Path.Combine(downloadsPath, $"{nameWithoutExt}_{counter}{extension}");
+                        counter++;
+                    }
+
+                    await System.IO.File.WriteAllBytesAsync(fullPath, data);
+                    return (fullPath, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (null, error);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (null, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (null, error);
+            }
+        }
+
+        /// <summary>
+        /// Скачивание файла
+        /// </summary>
+        public async Task<(byte[]? Data, ErrorHandlingService.ApiErrorResponse? Error)> DownloadFileAsync(string endpoint)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+                var response = await _httpClient.GetAsync($"{BaseUrl}/{endpoint}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadAsByteArrayAsync();
+                    return (data, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (null, error);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (null, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (null, error);
+            }
+        }
     }
 }

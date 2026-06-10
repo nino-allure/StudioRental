@@ -14,7 +14,14 @@
 <div class="container">
     <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <h1 class="section-title" style="margin-bottom: 0;">Студии</h1>
-        <a href="/Admin/CreateStudio" class="btn btn-primary" style="background: #10b981;">+ Добавить студию</a>
+        <div style="display: flex; gap: 12px;">
+            <a href="/Admin/ExportStudios" class="btn btn-success" style="background: #10b981; padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none;">
+                Экспорт в Excel
+            </a>
+            <a href="/Admin/CreateStudio" class="btn btn-primary" style="background: #3b82f6; padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none;">
+                Добавить студию
+            </a>
+        </div>
     </div>
 
     <div class="admin-nav">
@@ -48,6 +55,7 @@
                         <td style="padding: 12px;">
                             <div style="display: flex; gap: 12px;">
                                 <a href="/Admin/EditStudio/@studio.Id" style="color: var(--primary); text-decoration: none;">Редактировать</a>
+                                <a href="/Admin/ExportStudioReport/@studio.Id" style="color: #10b981; text-decoration: none;">Отчет</a>
                                 <form method="post" action="/Admin/DeleteStudio/@studio.Id" onsubmit="return confirm('Удалить студию?')" style="display: inline;">
                                     <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;">Удалить</button>
                                 </form>
