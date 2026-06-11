@@ -40,7 +40,7 @@ namespace StudioRentalWeb.Controllers
             return View();
         }
 
-        // GET: Список пользователей
+        // Список пользователей
         public async Task<IActionResult> Users()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
@@ -56,7 +56,7 @@ namespace StudioRentalWeb.Controllers
             return View(users ?? new List<User>());
         }
 
-        // DELETE: Удаление пользователя
+        // Удаление пользователя
         public async Task<IActionResult> DeleteUser(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
@@ -75,7 +75,7 @@ namespace StudioRentalWeb.Controllers
             return RedirectToAction("Users");
         }
 
-        // GET: Список студий
+        // Список студий
         public async Task<IActionResult> Studios()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
@@ -91,7 +91,7 @@ namespace StudioRentalWeb.Controllers
             return View(studios ?? new List<Studio>());
         }
 
-        // GET: Форма добавления студии
+        // Форма добавления студии
         [HttpGet]
         public IActionResult CreateStudio()
         {
@@ -99,7 +99,7 @@ namespace StudioRentalWeb.Controllers
             return View();
         }
 
-        // POST: Добавление студии
+        // Добавление студии
         [HttpPost]
         [Route("Admin/CreateStudio")]
         public async Task<IActionResult> CreateStudio(StudioViewModel model)
@@ -132,8 +132,8 @@ namespace StudioRentalWeb.Controllers
             _notifications.AddSuccess(this, $"Студия \"{model.Name}\" успешно создана");
             return RedirectToAction("Studios");
         }
-
-        // POST: Удаление студии
+        
+        // Удаление студии
         [HttpPost]
         public async Task<IActionResult> DeleteStudio(int id)
         {
@@ -152,8 +152,7 @@ namespace StudioRentalWeb.Controllers
 
             return RedirectToAction("Studios");
         }
-
-        // GET: Редактирование студии
+        // Редактирование студии
         [HttpGet]
         [Route("Admin/EditStudio/{id}")]
         public async Task<IActionResult> EditStudio(int id)
@@ -182,7 +181,6 @@ namespace StudioRentalWeb.Controllers
 
             return View(model);
         }
-
         [HttpPost]
         [Route("Admin/EditStudio")]
         public async Task<IActionResult> EditStudio(StudioViewModel model)
@@ -222,8 +220,7 @@ namespace StudioRentalWeb.Controllers
             _notifications.AddSuccess(this, $"Студия \"{model.Name}\" успешно обновлена");
             return RedirectToAction("Studios");
         }
-
-        // GET: Список бронирований
+        // Список бронирований
         public async Task<IActionResult> Bookings()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
@@ -238,8 +235,7 @@ namespace StudioRentalWeb.Controllers
 
             return View(bookings ?? new List<Booking>());
         }
-
-        // POST: Подтверждение бронирования
+        // Подтверждение бронирования
         public async Task<IActionResult> ConfirmBooking(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
@@ -257,8 +253,7 @@ namespace StudioRentalWeb.Controllers
 
             return RedirectToAction("Bookings");
         }
-
-        // POST: Отмена бронирования (админ)
+        // Отмена бронирования
         public async Task<IActionResult> CancelBooking(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");

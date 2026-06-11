@@ -2,34 +2,45 @@
 
 @{
     ViewData["Title"] = "Студии";
+    var studiosList = Model ?? new List<StudioRentalWeb.Models.Studio>();
 }
 
 <div class="container">
-    <h1 class="section-title">Доступные студии</h1>
-    <p style="color: var(--text-secondary); margin-bottom: 32px;">Выберите идеальную студию для вашего проекта</p>
+    <div class="hero" style="padding: 40px 0 20px;">
+        <h1 style="font-size: 48px;">Доступные студии</h1>
+        <p style="font-size: 16px;">Выберите идеальную студию для вашего проекта</p>
+    </div>
 
-    @if (!Model.Any())
+    @if (studiosList.Count == 0)
     {
-        <div style="text-align: center; padding: 60px;">
+        <div class="glass-panel" style="text-align: center; padding: 60px;">
             <p style="font-size: 18px; color: var(--text-secondary);">Студии пока не добавлены</p>
         </div>
     }
     else
     {
-        <div class="card-grid">
-            @foreach (var studio in Model)
+        <div class="card-grid" id="studiosGrid">
+            @foreach (var studio in studiosList)
             {
-                <a href="/Studios/Details/@studio.Id" class="card">
+                var studioId = studio.Id;
+                var studioName = studio.Name;
+                var studioAddress = studio.Address;
+                var studioPrice = studio.PricePerHour.ToString("N0");
+                var studioImage = !string.IsNullOrEmpty(studio.ImageUrl) ? studio.ImageUrl : "/img/gear.jpg";
+                var studioDesc = studio.Description ?? "";
+                var shortDesc = studioDesc.Length > 80 ? studioDesc.Substring(0, 80) + "..." : studioDesc;
+
+                <a href="/Studios/Details/@studioId" class="card" data-price="@studio.PricePerHour">
                     <div class="card-image">
-                        <img src="/img/gear.jpg" alt="Alternate Text" />
+                        <img src="@studioImage" alt="@studioName">
                     </div>
                     <div class="card-content">
-                        <div class="card-title">@studio.Name</div>
-                        <div class="card-address">@studio.Address</div>
-                        <div class="card-price">@studio.PricePerHour.ToString("C") / час</div>
-                        @if (!string.IsNullOrEmpty(studio.Description))
+                        <div class="card-title">@studioName</div>
+                        <div class="card-address">@studioAddress</div>
+                        <div class="card-price">@studioPrice ₽ <small>/ час</small></div>
+                        @if (!string.IsNullOrEmpty(studioDesc))
                         {
-                            <p style="margin-top: 12px; color: var(--text-secondary); font-size: 14px;">@(studio.Description.Length > 80 ? studio.Description.Substring(0, 80) + "..." : studio.Description)</p>
+                            <p style="margin-top: 12px; color: var(--text-secondary); font-size: 14px;">@shortDesc</p>
                         }
                     </div>
                 </a>
@@ -37,3 +48,57 @@
         </div>
     }
 </div>
+
+<script>
+    // Price fader
+    var priceFader = document.getElementById('priceFader');
+    var ratingFader = document.getElementById('ratingFader');
+    var priceValue = document.getElementById('priceValue');
+    var ratingValue = document.getElementById('ratingValue');
+    var applyBtn = document.getElementById('applyFilters');
+    var gearFilter = document.getElementById('gearFilter');
+    var studiosGrid = document.getElementById('studiosGrid');
+    var cards = document.querySelectorAll('.card');
+
+    var currentPrice = 3000;
+    var currentRating = 4.5;
+
+    if (priceFader) {
+        priceFader.addEventListener('click', function(e) {
+            var rect = priceFader.getBoundingClientRect();
+            var percent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            priceFader.style.setProperty('--percent', percent + '%');
+            currentPrice = Math.round(500 + (percent / 100) * 9500);
+            priceValue.textContent = currentPrice.toLocaleString() + ' ₽';
+        });
+    }
+
+    if (ratingFader) {
+        ratingFader.addEventListener('click', function(e) {
+            var rect = ratingFader.getBoundingClientRect();
+            var percent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            ratingFader.style.setProperty('--percent', percent + '%');
+            currentRating = (percent / 100 * 5);
+            ratingValue.textContent = currentRating.toFixed(1) + ' ★';
+        });
+    }
+
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function() {
+            for (var i = 0; i < cards.length; i++) {
+                var card = cards[i];
+                var show = true;
+                var priceAttr = card.getAttribute('data-price');
+                var price = priceAttr ? parseInt(priceAttr) : 0;
+
+                if (price && price > currentPrice) {
+                    show = false;
+                }
+
+                card.style.display = show ? 'block' : 'none';
+            }
+
+            showNotification('Фильтры применены', 'success');
+        });
+    }
+</script>

@@ -2,9 +2,20 @@
 
 @{
     ViewData["Title"] = "Редактирование студии";
+    var studioId = Model?.Id ?? 0;
+    var studioName = Model?.Name ?? "";
+    var studioAddress = Model?.Address ?? "";
+    var studioPrice = Model?.PricePerHour ?? 0;
+    var studioImage = Model?.ImageUrl ?? "/img/gear.jpg";
+    var studioDescription = Model?.Description ?? "";
 }
 
 <div class="container">
+    <div class="hero" style="padding: 40px 0 20px;">
+        <h1 style="font-size: 48px;">Редактирование студии</h1>
+        <p style="font-size: 16px;">Измените информацию о студии</p>
+    </div>
+
     <div class="admin-nav">
         <a href="/Admin">Главная</a>
         <a href="/Admin/Users">Пользователи</a>
@@ -12,42 +23,39 @@
         <a href="/Admin/Bookings">Бронирования</a>
     </div>
 
-    <div class="form-container" style="max-width: 800px; margin: 40px auto;">
-        <h1 class="section-title" style="text-align: center;">Редактирование студии</h1>
-
-        <form method="post" action="/Admin/EditStudio" style="background: var(--surface); padding: 32px; border-radius: 20px;">
+    <div class="glass-panel" style="max-width: 800px; margin: 0 auto; padding: 40px;">
+        <form method="post" action="/Admin/EditStudio">
             @Html.AntiForgeryToken()
 
-            <!-- Обязательно поле Id -->
-            <input type="hidden" name="Id" value="@Model.Id" />
+            <input type="hidden" name="Id" value="@studioId" />
 
             <div class="form-group">
                 <label>Название студии *</label>
-                <input name="Name" class="form-control" value="@Model.Name" required>
+                <input name="Name" class="form-control" value="@studioName" required>
             </div>
 
             <div class="form-group">
                 <label>Адрес *</label>
-                <input name="Address" class="form-control" value="@Model.Address" required>
+                <input name="Address" class="form-control" value="@studioAddress" required>
             </div>
 
             <div class="form-group">
                 <label>Цена за час (₽) *</label>
-                <input name="PricePerHour" class="form-control" type="number" step="100" value="@Model.PricePerHour" required>
+                <input name="PricePerHour" class="form-control" type="number" step="100" value="@studioPrice" required>
             </div>
 
             <div class="form-group">
                 <label>URL изображения</label>
-                <input name="ImageUrl" class="form-control" value="@(Model.ImageUrl ?? "/img/gear.jpg")">
+                <input name="ImageUrl" class="form-control" value="@studioImage">
             </div>
 
             <div class="form-group">
                 <label>Описание</label>
-                <textarea name="Description" class="form-control" rows="5">@Model.Description</textarea>
+                <textarea name="Description" class="form-control" rows="5">@studioDescription</textarea>
             </div>
 
-            <div style="display: flex; gap: 16px; margin-top: 24px;">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">Сохранить изменения</button>
+            <div style="display: flex; gap: 16px; margin-top: 32px;">
+                <button type="submit" class="btn btn-accent" style="flex: 1;">Сохранить изменения</button>
                 <a href="/Admin/Studios" class="btn btn-outline" style="flex: 1; text-align: center;">Отмена</a>
             </div>
         </form>
@@ -55,12 +63,10 @@
 </div>
 
 <script>
-    // Отладка
-    document.querySelector('form').addEventListener('submit', function(e) {
-        console.log('Form submitted!');
-        var formData = new FormData(this);
-        for (var pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
-        }
-    });
+    var form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            console.log('Form submitted! Studio ID: @studioId');
+        });
+    }
 </script>

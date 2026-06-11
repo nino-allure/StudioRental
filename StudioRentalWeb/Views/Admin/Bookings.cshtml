@@ -2,14 +2,24 @@
 
 @{
     ViewData["Title"] = "Управление бронированиями";
+    var bookingsList = Model ?? new List<StudioRentalWeb.Models.Booking>();
+    var totalBookings = bookingsList.Count;
+    var confirmedCount = 0;
+    var pendingCount = 0;
+    var cancelledCount = 0;
+
+    foreach (var b in bookingsList)
+    {
+        if (b.Status == "Confirmed") confirmedCount++;
+        else if (b.Status == "Pending") pendingCount++;
+        else if (b.Status == "Cancelled") cancelledCount++;
+    }
 }
 
 <div class="container">
-    <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h1 class="section-title" style="margin-bottom: 0;">Бронирования</h1>
-        <a href="/Admin/ExportBookings" class="btn btn-success" style="background: #10b981; padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none;">
-            Экспорт в Excel
-        </a>
+    <div class="hero" style="padding: 40px 0 20px;">
+        <h1 style="font-size: 48px;">Управление бронированиями</h1>
+        <p style="font-size: 16px;">Просмотр и управление всеми бронированиями</p>
     </div>
 
     <div class="admin-nav">
@@ -19,6 +29,41 @@
         <a href="/Admin/Bookings" class="active">Бронирования</a>
     </div>
 
+    <!-- Actions Bar -->
+    <div class="filter-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <a href="/Admin/ExportBookings" class="btn btn-accent">Экспорт в Excel</a>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <select id="statusFilter" class="form-control" style="width: auto;">
+                <option value="">Все статусы</option>
+                <option value="Pending">Ожидает</option>
+                <option value="Confirmed">Подтверждено</option>
+                <option value="Cancelled">Отменено</option>
+            </select>
+            <input type="date" id="dateFilter" class="form-control" style="width: auto;">
+        </div>
+    </div>
+
+    <!-- Bento Stats -->
+    <div class="bento-grid" style="margin: 24px 0;">
+        <div class="bento-card card-small" style="text-align: center;">
+            <div class="stat-number">@totalBookings</div>
+            <div class="stat-label">Всего бронирований</div>
+        </div>
+        <div class="bento-card card-small" style="text-align: center;">
+            <div class="stat-number" style="color: #00FF66;">@confirmedCount</div>
+            <div class="stat-label">Подтверждено</div>
+        </div>
+        <div class="bento-card card-small" style="text-align: center;">
+            <div class="stat-number" style="color: #f59e0b;">@pendingCount</div>
+            <div class="stat-label">Ожидают</div>
+        </div>
+        <div class="bento-card card-small" style="text-align: center;">
+            <div class="stat-number" style="color: #ef4444;">@cancelledCount</div>
+            <div class="stat-label">Отменено</div>
+        </div>
+    </div>
+
+    <!-- Bookings Table -->
     <div class="table-container">
         <table>
             <thead>
@@ -28,35 +73,50 @@
                     <th>Студия</th>
                     <th>Начало</th>
                     <th>Конец</th>
+                    <th>Длительность</th>
                     <th>Стоимость</th>
                     <th>Статус</th>
                     <th>Действия</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach (var booking in Model)
+            <tbody id="bookingsTableBody">
+                @foreach (var booking in bookingsList.OrderByDescending(b => b.CreatedAt))
                 {
-                    <tr>
-                        <td>@booking.Id</td>
-                        <td>@booking.Customer?.FullName </td>
-                        <td>@booking.Studio?.Name </td>
-                        <td>@booking.StartTime.ToString("dd.MM.yyyy HH:mm")</td>
-                        <td>@booking.EndTime.ToString("dd.MM.yyyy HH:mm")</td>
-                        <td>@booking.TotalPrice.ToString("C")</td>
+                    var bookingId = booking.Id;
+                    var customerName = booking.Customer?.FullName ?? "—";
+                    var customerEmail = booking.Customer?.Email ?? "";
+                    var studioName = booking.Studio?.Name ?? "—";
+                    var startTime = booking.StartTime.ToString("dd.MM.yyyy HH:mm");
+                    var endTime = booking.EndTime.ToString("dd.MM.yyyy HH:mm");
+                    var duration = (booking.EndTime - booking.StartTime).TotalHours;
+                    var durationFormatted = duration.ToString("F1");
+                    var totalPrice = booking.TotalPrice.ToString("N0");
+                    var status = booking.Status;
+                    var statusText = status == "Pending" ? "Ожидает" : (status == "Confirmed" ? "Подтверждено" : "Отменено");
+                    var statusClass = "status-" + status.ToLower();
+                    var bookingDate = booking.StartTime.ToString("yyyy-MM-dd");
+
+                    <tr data-status="@status" data-date="@bookingDate">
+                        <td>@bookingId</td>
                         <td>
-                            <span class="status-badge status-@booking.Status.ToLower()">
-                                @(booking.Status == "Pending" ? "Ожидает" : booking.Status == "Confirmed" ? "Подтверждено" : "Отменено")
-                            </span>
+                            <strong>@customerName</strong><br>
+                            <small style="color: var(--text-secondary);">@customerEmail</small>
                         </td>
+                        <td>@studioName</td>
+                        <td>@startTime</td>
+                        <td>@endTime</td>
+                        <td>@durationFormatted ч</td>
+                        <td style="color: #00FF66;">@totalPrice ₽</td>
+                        <td><span class="status-badge @statusClass">@statusText</span></td>
                         <td>
                             <div style="display: flex; gap: 8px;">
-                                @if (booking.Status == "Pending")
+                                @if (status == "Pending")
                                 {
-                                    <form method="post" action="/Admin/ConfirmBooking/@booking.Id">
-                                        <button type="submit" style="background: none; border: none; color: var(--success); cursor: pointer;">Подтвердить</button>
+                                    <form method="post" action="/Admin/ConfirmBooking/@bookingId" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline btn-sm" style="padding: 6px 12px; color: #00FF66;">Подтвердить</button>
                                     </form>
-                                    <form method="post" action="/Admin/CancelBooking/@booking.Id">
-                                        <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;">Отменить</button>
+                                    <form method="post" action="/Admin/CancelBooking/@bookingId" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline btn-sm" style="padding: 6px 12px; color: #ef4444;">Отменить</button>
                                     </form>
                                 }
                             </div>
@@ -67,3 +127,29 @@
         </table>
     </div>
 </div>
+
+<script>
+    var statusFilter = document.getElementById('statusFilter');
+    var dateFilter = document.getElementById('dateFilter');
+    var tableRows = document.querySelectorAll('#bookingsTableBody tr');
+
+    function applyFilters() {
+        var status = statusFilter ? statusFilter.value : '';
+        var date = dateFilter ? dateFilter.value : '';
+
+        for (var i = 0; i < tableRows.length; i++) {
+            var row = tableRows[i];
+            var rowStatus = row.getAttribute('data-status') || '';
+            var rowDate = row.getAttribute('data-date') || '';
+
+            var show = true;
+            if (status && rowStatus !== status) show = false;
+            if (date && rowDate !== date) show = false;
+
+            row.style.display = show ? '' : 'none';
+        }
+    }
+
+    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+    if (dateFilter) dateFilter.addEventListener('change', applyFilters);
+</script>

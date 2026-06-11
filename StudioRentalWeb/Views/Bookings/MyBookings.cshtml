@@ -2,16 +2,31 @@
 
 @{
     ViewData["Title"] = "Мои бронирования";
+    var bookingsList = Model ?? new List<StudioRentalWeb.Models.Booking>();
+    var totalCount = bookingsList.Count;
+    var confirmedCount = 0;
+    var pendingCount = 0;
+    var totalSum = 0m;
+
+    foreach (var b in bookingsList)
+    {
+        if (b.Status == "Confirmed") confirmedCount++;
+        if (b.Status == "Pending") pendingCount++;
+        totalSum += b.TotalPrice;
+    }
 }
 
 <div class="container">
-    <h1 class="section-title">Мои бронирования</h1>
+    <div class="hero" style="padding: 40px 0 20px;">
+        <h1 style="font-size: 48px;">Мои бронирования</h1>
+        <p style="font-size: 16px;">Управляйте вашими бронированиями студий</p>
+    </div>
 
-    @if (!Model.Any())
+    @if (totalCount == 0)
     {
-        <div style="text-align: center; padding: 60px; background: var(--surface); border-radius: 20px;">
+        <div class="glass-panel" style="text-align: center; padding: 60px;">
             <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 20px;">У вас пока нет бронирований</p>
-            <a href="/Studios" class="btn btn-primary">Найти студию</a>
+            <a href="/Studios" class="btn btn-accent">Найти студию</a>
         </div>
     }
     else
@@ -23,36 +38,71 @@
                         <th>Студия</th>
                         <th>Дата и время начала</th>
                         <th>Дата и время окончания</th>
+                        <th>Длительность</th>
                         <th>Стоимость</th>
                         <th>Статус</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var booking in Model)
+                    @foreach (var booking in bookingsList)
                     {
+                        var studioName = booking.Studio?.Name ?? "—";
+                        var startTime = booking.StartTime.ToString("dd.MM.yyyy HH:mm");
+                        var endTime = booking.EndTime.ToString("dd.MM.yyyy HH:mm");
+                        var duration = (booking.EndTime - booking.StartTime).TotalHours;
+                        var durationFormatted = duration.ToString("F1");
+                        var totalPrice = booking.TotalPrice.ToString("N0");
+                        var status = booking.Status;
+                        var statusText = status == "Pending" ? "Ожидает" : (status == "Confirmed" ? "Подтверждено" : "Отменено");
+                        var statusClass = "status-" + status.ToLower();
+                        var bookingId = booking.Id;
+
                         <tr>
-                            <td><strong>@booking.Studio?.Name</strong></td>
-                            <td>@booking.StartTime.ToString("dd.MM.yyyy HH:mm")</td>
-                            <td>@booking.EndTime.ToString("dd.MM.yyyy HH:mm")</td>
-                            <td>@booking.TotalPrice.ToString("C")</td>
+                            <td><strong>@studioName</strong></td>
+                            <td>@startTime</td>
+                            <td>@endTime</td>
+                            <td>@durationFormatted ч</td>
+                            <td style="color: #00FF66; font-weight: 600;">@totalPrice ₽</td>
+                            <td><span class="status-badge @statusClass">@statusText</span></td>
                             <td>
-                                <span class="status-badge status-@booking.Status.ToLower()">
-                                    @(booking.Status == "Pending" ? "Ожидает" : booking.Status == "Confirmed" ? "Подтверждено" : "Отменено")
-                                </span>
-                            </td>
-                            <td>
-                                @if (booking.Status == "Pending")
+                                @if (status == "Pending")
                                 {
-                                    <form method="post" action="/Bookings/Cancel/@booking.Id" style="display: inline;">
-                                        <button type="submit" class="btn-danger" style="background: none; border: none; color: var(--danger); cursor: pointer;">Отменить</button>
+                                    <form method="post" action="/Bookings/Cancel/@bookingId" style="display: inline;" onsubmit="return confirm('Отменить бронирование?')">
+                                        <button type="submit" class="btn btn-outline btn-sm" style="padding: 6px 16px;">Отменить</button>
                                     </form>
+                                }
+                                @if (status == "Confirmed")
+                                {
+                                    <button class="btn btn-sm" style="padding: 6px 16px; background: rgba(0,255,102,0.1); color: #00FF66;" disabled>Подтверждено</button>
                                 }
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="glass-panel" style="padding: 24px; margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <div class="stat-label">Всего бронирований</div>
+                    <div class="stat-number">@totalCount</div>
+                </div>
+                <div>
+                    <div class="stat-label">Активных</div>
+                    <div class="stat-number" style="color: #00FF66;">@confirmedCount</div>
+                </div>
+                <div>
+                    <div class="stat-label">Ожидают</div>
+                    <div class="stat-number" style="color: #f59e0b;">@pendingCount</div>
+                </div>
+                <div>
+                    <div class="stat-label">Общая сумма</div>
+                    <div class="stat-number">@totalSum.ToString("N0") ₽</div>
+                </div>
+            </div>
         </div>
     }
 </div>

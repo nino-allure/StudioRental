@@ -10,7 +10,10 @@
 }
 
 <div class="container">
-    <h1 class="section-title">Админ панель</h1>
+    <div class="hero" style="padding: 40px 0 20px;">
+        <h1 style="font-size: 48px;">Админ панель</h1>
+        <p style="font-size: 16px;">Управление платформой StudioRental</p>
+    </div>
 
     <div class="admin-nav">
         <a href="/Admin" class="active">Главная</a>
@@ -19,27 +22,19 @@
         <a href="/Admin/Bookings">Бронирования</a>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value">@ViewBag.UsersCount</div>
+    <!-- Bento Grid для статистики -->
+    <div class="bento-grid">
+        <div class="bento-card card-medium">
+            <div class="stat-number">@ViewBag.UsersCount</div>
             <div class="stat-label">Пользователей</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value">@ViewBag.StudiosCount</div>
+        <div class="bento-card card-medium">
+            <div class="stat-number">@ViewBag.StudiosCount</div>
             <div class="stat-label">Студий</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value">@ViewBag.BookingsCount</div>
+        <div class="bento-card card-medium">
+            <div class="stat-number">@ViewBag.BookingsCount</div>
             <div class="stat-label">Бронирований</div>
-        </div>
-    </div>
-
-    <div style="background: var(--surface); border-radius: 20px; padding: 32px;">
-        <h3 style="margin-bottom: 16px;">Быстрые действия</h3>
-        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/Admin/Users" class="btn btn-outline">Управление пользователями</a>
-            <a href="/Admin/Studios" class="btn btn-outline">Управление студиями</a>
-            <a href="/Admin/Bookings" class="btn btn-outline">Управление бронированиями</a>
         </div>
     </div>
 </div>

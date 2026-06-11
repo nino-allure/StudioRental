@@ -2,159 +2,204 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudioRental - Аренда студий звукозаписи</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>StudioRental - Премиальные студии звукозаписи</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        /* Стили для уведомлений */
-        .notification-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 350px;
-        }
 
-        .notification {
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s ease-out;
-            cursor: pointer;
-        }
-
-        .notification-success {
-            background: #10b981;
-            color: white;
-            border-left: 4px solid #059669;
-        }
-
-        .notification-error {
-            background: #ef4444;
-            color: white;
-            border-left: 4px solid #dc2626;
-        }
-
-        .notification-warning {
-            background: #f59e0b;
-            color: white;
-            border-left: 4px solid #d97706;
-        }
-
-        .notification-info {
-            background: #3b82f6;
-            color: white;
-            border-left: 4px solid #2563eb;
-        }
-
-        @@keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @@keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-    </style>
+    <!-- Paper.js for Wave Effect -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.15/paper-full.min.js"></script>
 </head>
 <body>
-    @if (Context.Session.GetString("UserId") != null)
-    {
-        <nav class="navbar">
+
+    <!-- Canvas Wave Background -->
+    <div class="wave-container">
+        <canvas id="bend" resize></canvas>
+        <div class="wave-overlay"></div>
+    </div>
+
+    <div class="main-content">
+        <!-- Glass Navigation -->
+        <div class="glass-nav">
             <div class="container">
-                <a href="/" class="logo">StudioRental</a>
-                <div class="nav-links">
-                    <a href="/Studios">Студии</a>
-                    <a href="/Bookings/MyBookings">Мои бронирования</a>
-                    @if (Context.Session.GetString("UserRole") == "Admin")
-                    {
-                        <a href="/Admin">Админ панель</a>
-                    }
-                    <div class="user-info">
-                        <span class="user-name">@Context.Session.GetString("UserName")</span>
-                        <form method="post" action="/Account/Logout" style="display: inline;">
-                            <button type="submit" class="btn-logout">Выйти</button>
-                        </form>
+                <div class="navbar">
+                    <a href="/" class="logo">STUDIORENTAL</a>
+                    <div class="nav-links">
+                        @if (Context.Session.GetString("UserId") != null)
+                        {
+                            <a href="/Studios">Студии</a>
+                            <a href="/Bookings/MyBookings">Мои бронирования</a>
+                            if (Context.Session.GetString("UserRole") == "Admin")
+                            {
+                                <a href="/Admin">Админ панель</a>
+                            }
+                            <div class="user-info">
+                                <span class="user-name">@Context.Session.GetString("UserName")</span>
+                                <form method="post" action="/Account/Logout" style="display: inline;">
+                                    <button type="submit" class="btn-logout">Выйти</button>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <a href="/Account/Login">Вход</a>
+                            <a href="/Account/Register" class="btn btn-primary btn-sm">Регистрация</a>
+                        }
                     </div>
                 </div>
             </div>
-        </nav>
-    }
-
-    <main>
-        @RenderBody()
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <p>StudioRental - Аренда студий звукозаписи</p>
         </div>
-    </footer>
 
-    <!-- Контейнер для уведомлений -->
+        <main>
+            @RenderBody()
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>StudioRental — Платформа для аренды студий звукозаписи</p>
+                <p style="margin-top: 12px;">© 2026 StudioRental. Все права защищены.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
 
     <script>
+        // Canvas Wave Effect
+        (function() {
+            var canvas = document.getElementById('bend');
+            if (canvas && typeof paper !== 'undefined') {
+                paper.install(window);
+                paper.setup(canvas);
+
+                var h = window.innerHeight,
+                    w = window.innerWidth,
+                    horizon = h / 2,
+                    pathCounts = 13,
+                    pathPoints = 15,
+                    strokeWidth = 2,
+                    strokeColor = '#00FF66',
+                    speed = 1.6,
+                    offset = 7,
+                    frequency = [0, -30, 50, -50, -35, 35, 0, -30, 50, -50, -35, 35, -30, 50, -50, -35, 35],
+                    delay = 0.9,
+                    path = [];
+
+                function initializePath() {
+                    h = window.innerHeight;
+                    w = window.innerWidth;
+                    horizon = h / 2;
+
+                    if (paper.project) {
+                        paper.project.activeLayer.removeChildren();
+                    }
+
+                    for (var i = 0; i < pathCounts; i++) {
+                        path[i] = new paper.Path();
+                        path[i].add(new paper.Point(-10, h));
+                        path[i].add(new paper.Point(-10, horizon));
+
+                        for (var p = 0; p < pathPoints - 1; p++) {
+                            path[i].add(new paper.Point(w / (pathPoints - 1) * p + p, horizon + frequency[p]));
+                        }
+
+                        path[i].add(new paper.Point(w + 10, horizon));
+                        path[i].add(new paper.Point(w + 10, h));
+                        path[i].strokeWidth = strokeWidth;
+                        path[i].strokeColor = strokeColor;
+                        path[i].fillColor = 'rgba(0, 0, 0, 0)';
+                        path[i].smooth();
+                    }
+                }
+
+                initializePath();
+
+                if (typeof view !== 'undefined') {
+                    view.onFrame = function(event) {
+                        for (var p = 0; p < pathCounts; p++) {
+                            for (var s = 0; s < pathPoints; s++) {
+                                var value = (s % 2) ? -1 : 1;
+                                var segment = path[p].segments[2 + s];
+                                if (segment) {
+                                    segment.point.y = horizon + ((Math.sin((event.time + s * delay) * speed)) * (frequency[s] * value + (p * offset * value)));
+                                }
+                            }
+                        }
+                    };
+                }
+
+                window.onresize = function() {
+                    initializePath();
+                };
+            }
+        })();
+
+        // Notifications System
         function showNotification(message, type) {
-            const container = document.getElementById('notificationContainer');
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
+            var container = document.getElementById('notificationContainer');
+            if (!container) return;
+
+            var notification = document.createElement('div');
+            notification.className = 'notification notification-' + type;
             notification.innerHTML = message;
 
             container.appendChild(notification);
 
-            setTimeout(() => {
+            setTimeout(function() {
                 notification.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => {
+                setTimeout(function() {
                     notification.remove();
                 }, 300);
             }, 5000);
 
-            // Скрытие по клику
-            notification.addEventListener('click', () => {
+            notification.addEventListener('click', function() {
                 notification.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => {
+                setTimeout(function() {
                     notification.remove();
                 }, 300);
             });
         }
 
+        // Skeuomorphic Fader
+        document.querySelectorAll('.skeuo-fader').forEach(function(fader) {
+            fader.addEventListener('click', function(e) {
+                var rect = fader.getBoundingClientRect();
+                var percent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                fader.style.setProperty('--percent', percent + '%');
+
+                var valueId = fader.id ? fader.id.replace('Fader', 'Value') : null;
+                if (valueId) {
+                    var label = document.getElementById(valueId);
+                    if (label) {
+                        if (fader.id === 'priceFader') {
+                            var price = Math.round(500 + (percent / 100) * 9500);
+                            label.textContent = price + ' ₽';
+                        } else if (fader.id === 'ratingFader') {
+                            var rating = (percent / 100 * 5).toFixed(1);
+                            label.textContent = rating + ' ★';
+                        }
+                    }
+                }
+            });
+        });
+
+        // TempData Notifications
         document.addEventListener('DOMContentLoaded', function() {
-        @if (TempData["success"] != null)
-        {
-            @:showNotification("@TempData["success"]", "success");
-        }
-        @if (TempData["error"] != null)
-        {
-            @:showNotification("@TempData["error"]", "error");
-        }
-        @if (TempData["warning"] != null)
-        {
-            @:showNotification("@TempData["warning"]", "warning");
-        }
-        @if (TempData["info"] != null)
-        {
-            @:showNotification("@TempData["info"]", "info");
-        }
+            var successMsg = '@Html.Raw(TempData["success"])';
+            var errorMsg = '@Html.Raw(TempData["error"])';
+            var warningMsg = '@Html.Raw(TempData["warning"])';
+            var infoMsg = '@Html.Raw(TempData["info"])';
+
+            if (successMsg && successMsg !== '') showNotification(successMsg, 'success');
+            if (errorMsg && errorMsg !== '') showNotification(errorMsg, 'error');
+            if (warningMsg && warningMsg !== '') showNotification(warningMsg, 'warning');
+            if (infoMsg && infoMsg !== '') showNotification(infoMsg, 'info');
         });
     </script>
 

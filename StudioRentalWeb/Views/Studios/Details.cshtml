@@ -1,48 +1,92 @@
 ﻿@model StudioRentalWeb.Models.Studio
 
 @{
-    ViewData["Title"] = Model.Name;
+    ViewData["Title"] = Model?.Name ?? "Студия";
+    var studio = Model;
+    var studioName = studio?.Name ?? "";
+    var studioAddress = studio?.Address ?? "";
+    var studioPrice = studio?.PricePerHour ?? 0;
+    var studioPriceFormatted = studioPrice.ToString("N0");
+    var studioImage = (!string.IsNullOrEmpty(studio?.ImageUrl) ? studio.ImageUrl : "/img/gear.jpg");
+    var studioDescription = studio?.Description ?? "Профессиональная студия звукозаписи с новейшим оборудованием. Идеально подходит для записи вокала, инструментов и сведения.";
 }
 
 <div class="container">
+    <!-- Studio Header -->
     <div class="studio-header">
         <div>
-            <h1 class="section-title" style="margin-top: 0;">@Model.Name</h1>
-            <p style="color: var(--text-secondary);">@Model.Address</p>
+            <h1 class="section-title" style="margin-top: 0;">@studioName</h1>
+            <p style="color: var(--text-secondary);">@studioAddress</p>
         </div>
-        <div class="studio-price">@Model.PricePerHour.ToString("C") / час</div>
+        <div class="studio-price">@studioPriceFormatted ₽ <small>/ час</small></div>
     </div>
 
-    <div style="background: var(--surface); border-radius: 20px; overflow: hidden; margin-bottom: 24px;">
-        <div style="height: 300px; background: linear-gradient(135deg, #d97706 0%, #b45309 100%); display: flex; align-items: center; justify-content: center; font-size: 80px;">
-            <img src="/img/gear.jpg" alt="Alternate Text" />
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
-        <div>
-            <h3 style="font-weight: 600; margin-bottom: 12px;">Описание</h3>
-            <p style="color: var(--text-secondary); line-height: 1.6;">@(Model.Description ?? "Описание отсутствует")</p>
-        </div>
-        <div>
-            <div class="booking-form">
-                <h3 style="font-weight: 600; margin-bottom: 20px;">Забронировать студию</h3>
-                <form method="post" action="/Bookings/Create">
-                    <input type="hidden" name="studioId" value="@Model.Id">
-
-                    <div class="form-group">
-                        <label>Дата и время начала</label>
-                        <input type="datetime-local" name="startTime" class="form-control" required min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Дата и время окончания</label>
-                        <input type="datetime-local" name="endTime" class="form-control" required min="@DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm")">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block">Забронировать</button>
-                </form>
+    <!-- Main Content Grid -->
+    <div class="bento-grid" style="margin-top: 0;">
+        <!-- Gallery Card -->
+        <div class="bento-card card-large">
+            <div class="studio-image" style="height: 300px;">
+                <img src="@studioImage" alt="@studioName" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
+        </div>
+
+        <!-- Booking Card -->
+        <div class="bento-card card-medium">
+            <h3 style="margin-bottom: 20px;">Забронировать</h3>
+            <form method="post" action="/Bookings/Create">
+                <input type="hidden" name="studioId" value="@studio?.Id">
+
+                <div class="form-group">
+                    <label>Дата и время начала</label>
+                    <input type="datetime-local" name="startTime" class="form-control" required min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
+                </div>
+
+                <div class="form-group">
+                    <label>Дата и время окончания</label>
+                    <input type="datetime-local" name="endTime" class="form-control" required min="@DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm")">
+                </div>
+
+
+                <button type="submit" class="btn btn-accent btn-block" style="margin-top: 20px;">Забронировать сейчас</button>
+            </form>
+        </div>
+
+        <!-- Description Card -->
+        <div class="bento-card card-small">
+            <h3 style="margin-bottom: 16px;">Описание</h3>
+            <p style="color: var(--text-secondary); line-height: 1.6;">@studioDescription</p>
         </div>
     </div>
 </div>
+
+<script>
+    // Slot selection
+    var slots = document.querySelectorAll('.slot.available');
+    for (var i = 0; i < slots.length; i++) {
+        slots[i].addEventListener('click', function() {
+            var allSlots = document.querySelectorAll('.slot.available');
+            for (var j = 0; j < allSlots.length; j++) {
+                allSlots[j].classList.remove('active');
+                allSlots[j].style.background = '';
+            }
+            this.classList.add('active');
+            this.style.background = 'rgba(0, 255, 102, 0.2)';
+
+            // Set time to datetime inputs
+            var time = this.textContent;
+            var today = new Date().toISOString().slice(0, 10);
+            var startInput = document.querySelector('input[name="startTime"]');
+            if (startInput) {
+                startInput.value = today + 'T' + time + ':00';
+            }
+        });
+    }
+</script>
+
+<style>
+    .slot.available.active {
+        background: rgba(0, 255, 102, 0.2);
+        border: 1px solid #00FF66;
+        color: #00FF66;
+    }
+</style>

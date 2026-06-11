@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Управление студиями";
     var isAdmin = Context.Session.GetString("UserRole") == "Admin";
+    var studiosList = Model ?? new List<StudioRentalWeb.Models.Studio>();
 
     if (!isAdmin)
     {
@@ -12,16 +13,9 @@
 }
 
 <div class="container">
-    <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h1 class="section-title" style="margin-bottom: 0;">Студии</h1>
-        <div style="display: flex; gap: 12px;">
-            <a href="/Admin/ExportStudios" class="btn btn-success" style="background: #10b981; padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none;">
-                Экспорт в Excel
-            </a>
-            <a href="/Admin/CreateStudio" class="btn btn-primary" style="background: #3b82f6; padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none;">
-                Добавить студию
-            </a>
-        </div>
+    <div class="hero" style="padding: 40px 0 20px;">
+        <h1 style="font-size: 48px;">Управление студиями</h1>
+        <p style="font-size: 16px;">Добавление, редактирование и удаление студий</p>
     </div>
 
     <div class="admin-nav">
@@ -31,33 +25,57 @@
         <a href="/Admin/Bookings">Бронирования</a>
     </div>
 
-    <div class="table-container" style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
+    <!-- Actions Bar -->
+    <div class="filter-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; gap: 12px;">
+            <a href="/Admin/CreateStudio" class="btn btn-accent">Добавить студию</a>
+            <a href="/Admin/ExportStudios" class="btn btn-primary">Экспорт в Excel</a>
+        </div>
+        <div class="filter-group" style="flex: 0.3; min-width: 200px;">
+            <input type="text" id="searchStudio" class="form-control" placeholder="Поиск студии...">
+        </div>
+    </div>
+
+    <!-- Studios Table -->
+    <div class="table-container">
+        <table>
             <thead>
-                <tr style="background: var(--surface);">
-                    <th style="padding: 12px; text-align: left;">ID</th>
-                    <th style="padding: 12px; text-align: left;">Название</th>
-                    <th style="padding: 12px; text-align: left;">Адрес</th>
-                    <th style="padding: 12px; text-align: left;">Цена/час</th>
-                    <th style="padding: 12px; text-align: left;">Владелец</th>
-                    <th style="padding: 12px; text-align: left;">Действия</th>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Адрес</th>
+                    <th>Цена/час</th>
+                    <th>Владелец</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach (var studio in Model)
+            <tbody id="studiosTableBody">
+                @foreach (var studio in studiosList)
                 {
-                    <tr style="border-bottom: 1px solid var(--border);">
-                        <td style="padding: 12px;">@studio.Id</td>
-                        <td style="padding: 12px;">@studio.Name</td>
-                        <td style="padding: 12px;">@(studio.Address.Length > 30 ? studio.Address.Substring(0, 30) + "..." : studio.Address)</td>
-                        <td style="padding: 12px;">@studio.PricePerHour.ToString("C")</td>
-                        <td style="padding: 12px;">@studio.Owner?.FullName</td>
-                        <td style="padding: 12px;">
+                    var studioId = studio.Id;
+                    var studioName = studio.Name;
+                    var studioAddress = studio.Address;
+                    var shortAddress = studioAddress.Length > 40 ? studioAddress.Substring(0, 40) + "..." : studioAddress;
+                    var studioPrice = studio.PricePerHour.ToString("N0");
+                    var ownerName = studio.Owner?.FullName ?? "—";
+                    var isApproved = studio.IsApproved;
+                    var statusClass = isApproved ? "status-confirmed" : "status-pending";
+                    var statusText = isApproved ? "Активна" : "На модерации";
+
+                    <tr data-name="@studioName.ToLower()">
+                        <td>@studioId</td>
+                        <td><strong>@studioName</strong></td>
+                        <td>@shortAddress</td>
+                        <td style="color: #00FF66;">@studioPrice ₽</td>
+                        <td>@ownerName</td>
+                        <td><span class="status-badge @statusClass">@statusText</span></td>
+                        <td>
                             <div style="display: flex; gap: 12px;">
-                                <a href="/Admin/EditStudio/@studio.Id" style="color: var(--primary); text-decoration: none;">Редактировать</a>
-                                <a href="/Admin/ExportStudioReport/@studio.Id" style="color: #10b981; text-decoration: none;">Отчет</a>
-                                <form method="post" action="/Admin/DeleteStudio/@studio.Id" onsubmit="return confirm('Удалить студию?')" style="display: inline;">
-                                    <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer;">Удалить</button>
+                                <a href="/Admin/EditStudio/@studioId" class="btn btn-outline btn-sm" style="padding: 6px 12px;">Редактировать</a>
+                                <a href="/Admin/ExportStudioReport/@studioId" class="btn btn-outline btn-sm" style="padding: 6px 12px; color: #00FF66;">Отчет</a>
+                                <form method="post" action="/Admin/DeleteStudio/@studioId" onsubmit="return confirm('Удалить студию?')" style="display: inline;">
+                                    <button type="submit" class="btn btn-outline btn-sm" style="padding: 6px 12px; color: #ef4444;">Удалить</button>
                                 </form>
                             </div>
                         </td>
@@ -67,3 +85,24 @@
         </table>
     </div>
 </div>
+
+<script>
+    var searchInput = document.getElementById('searchStudio');
+    var tableRows = document.querySelectorAll('#studiosTableBody tr');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var searchTerm = this.value.toLowerCase();
+
+            for (var i = 0; i < tableRows.length; i++) {
+                var row = tableRows[i];
+                var studioName = row.getAttribute('data-name') || '';
+                if (studioName.indexOf(searchTerm) !== -1 || searchTerm === '') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+</script>

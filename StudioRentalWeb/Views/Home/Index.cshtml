@@ -1,52 +1,98 @@
 ﻿@{
     ViewData["Title"] = "Главная";
+    var isLoggedIn = Context.Session.GetString("UserId") != null;
 }
 
-<div class="hero">
-    <div class="container">
-        <h1>Студии звукозаписи</h1>
-        <p>Арендуйте профессиональные студии для вашего творчества</p>
-        <a href="/Studios" class="btn btn-primary">Найти студию</a>
-    </div>
-</div>
-
 <div class="container">
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value">50+</div>
-            <div class="stat-label">Студий доступно</div>
+    <!-- Hero Section -->
+    <div class="hero animate-fade-up">
+        <h1>Профессиональные<br>студии звукозаписи</h1>
+        <p>Арендуйте лучшие студии с профессиональным оборудованием. <br/> всё для вашего творчества</p>
+        <a href="/Studios" class="btn btn-accent">Найти студию</a>
+    </div>
+
+    <!-- Bento Grid -->
+    <div class="bento-grid">
+        <!-- Статистика -->
+        <div class="bento-card card-medium">
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div>
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Премиальных студий</div>
+                </div>
+                <div>
+                    <div class="stat-number">2 847</div>
+                    <div class="stat-label">Успешных сессий</div>
+                </div>
+                <div>
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Круглосуточная поддержка</div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value">24/7</div>
-            <div class="stat-label">Работаем круглосуточно</div>
+
+        <!-- Преимущества -->
+        <div class="bento-card card-medium">
+            <h3 style="margin-bottom: 20px;">Почему выбирают нас</h3>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Топовое оборудование</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">Neve, SSL, API, Universal Audio</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Опытные звукорежиссеры</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">Помощь в записи и сведении</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Инструменты в студиях</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">Барабаны, гитары, синтезаторы</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value">100%</div>
-            <div class="stat-label">Профессиональное оборудование</div>
+
+        <!-- CTA -->
+        <div class="bento-card card-wide">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <div class="studio-name" style="margin-bottom: 8px;">Готовы начать?</div>
+                    <div style="color: var(--text-secondary);">Забронируйте студию прямо сейчас</div>
+                </div>
+                <a href="/Studios" class="btn btn-accent">Найти студию →</a>
+            </div>
         </div>
     </div>
 
-    <h2 class="section-title">Почему выбирают нас</h2>
+    <!-- Популярные студии -->
+    <h2 class="section-title">Популярные студии</h2>
     <div class="card-grid">
         <div class="card">
-            <div class="card-image"><img src="img/gear.jpg" alt="Alternate Text"/></div>
+            <div class="card-image"><img src="https://picsum.photos/id/104/400/300" alt="Studio"></div>
             <div class="card-content">
-                <div class="card-title">Профессиональное оборудование</div>
-                <p>Только качественное оборудование от ведущих производителей</p>
+                <div class="card-title">Prime Studio</div>
+                <div class="card-address">Москва, ул. Тверская, 15</div>
+                <div class="card-price">2 500 ₽ / час</div>
             </div>
         </div>
         <div class="card">
-            <div class="card-image"><img src="img/engenire.jpg" alt="Alternate Text" /></div>
+            <div class="card-image"><img src="https://picsum.photos/id/107/400/300" alt="Studio"></div>
             <div class="card-content">
-                <div class="card-title">Звукорежиссеры</div>
-                <p>Опытные звукорежиссеры помогут достичь идеального звучания</p>
+                <div class="card-title">Rock House</div>
+                <div class="card-address">Москва, Кутузовский пр-т, 32</div>
+                <div class="card-price">3 000 ₽ / час</div>
             </div>
         </div>
         <div class="card">
-            <div class="card-image"><img src="img/tools.jpg" alt="Alternate Text" /></div>
+            <div class="card-image"><img src="https://picsum.photos/id/112/400/300" alt="Studio"></div>
             <div class="card-content">
-                <div class="card-title">Инструменты</div>
-                <p>Широкий выбор музыкальных инструментов в студиях</p>
+                <div class="card-title">Jazz Loft</div>
+                <div class="card-address">Москва, ул. Арбат, 45</div>
+                <div class="card-price">3 500 ₽ / час</div>
             </div>
         </div>
     </div>
