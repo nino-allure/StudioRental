@@ -81,6 +81,29 @@
             }
         });
     }
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var start = new Date(this.querySelector('[name="startTime"]').value);
+        var end = new Date(this.querySelector('[name="endTime"]').value);
+        var now = new Date();
+
+        if (start < now) {
+            showNotification('Нельзя выбрать время в прошлом', 'error');
+            e.preventDefault();
+            return false;
+        }
+
+        if (end <= start) {
+            showNotification('Время окончания должно быть позже начала', 'error');
+            e.preventDefault();
+            return false;
+        }
+
+        if ((end - start) < 60 * 60 * 1000) {
+            showNotification('Минимальная длительность бронирования - 1 час', 'error');
+            e.preventDefault();
+            return false;
+        }
+    });
 </script>
 
 <style>
