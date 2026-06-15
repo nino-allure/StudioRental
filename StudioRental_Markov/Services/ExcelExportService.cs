@@ -40,7 +40,6 @@ namespace StudioRental_Markov.Services
             worksheet.Cells["G1"].Value = "Статус";
             worksheet.Cells["H1"].Value = "Дата создания";
 
-            // Стиль заголовков
             using (var range = worksheet.Cells["A1:H1"])
             {
                 range.Style.Font.Bold = true;
@@ -52,7 +51,6 @@ namespace StudioRental_Markov.Services
                 range.Style.Border.BorderAround(ExcelBorderStyle.Thin);
             }
 
-            // Заполнение данных
             int row = 2;
             foreach (var studio in studios)
             {
@@ -69,10 +67,8 @@ namespace StudioRental_Markov.Services
                 row++;
             }
 
-            // Автоширина колонок
             worksheet.Cells.AutoFitColumns();
 
-            // Добавление итогов
             int totalRow = row + 1;
             worksheet.Cells[totalRow, 1].Value = $"Всего студий: {studios.Count}";
             worksheet.Cells[totalRow, 1, totalRow, 4].Merge = true;
@@ -103,7 +99,7 @@ namespace StudioRental_Markov.Services
             using var package = new ExcelPackage();
             var worksheet = package.Workbook.Worksheets.Add("Бронирования");
 
-            // Заголовки
+
             string[] headers = { "ID", "Клиент", "Телефон клиента", "Студия", "Начало", "Конец",
                                  "Длительность (ч)", "Стоимость", "Статус", "Дата создания" };
             for (int i = 0; i < headers.Length; i++)
@@ -111,7 +107,6 @@ namespace StudioRental_Markov.Services
                 worksheet.Cells[1, i + 1].Value = headers[i];
             }
 
-            // Стиль заголовков
             using (var range = worksheet.Cells[1, 1, 1, headers.Length])
             {
                 range.Style.Font.Bold = true;
@@ -122,7 +117,6 @@ namespace StudioRental_Markov.Services
                 range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             }
 
-            // Заполнение данных
             int row = 2;
             decimal totalRevenue = 0;
 
@@ -141,7 +135,6 @@ namespace StudioRental_Markov.Services
                 worksheet.Cells[row, 8].Value = booking.TotalPrice;
                 worksheet.Cells[row, 8].Style.Numberformat.Format = "#,##0.00 ₽";
 
-                // Статус с цветом
                 var statusCell = worksheet.Cells[row, 9];
                 statusCell.Value = booking.Status switch
                 {
@@ -170,7 +163,6 @@ namespace StudioRental_Markov.Services
 
             worksheet.Cells.AutoFitColumns();
 
-            // Итоговая строка
             int summaryRow = row + 1;
             worksheet.Cells[summaryRow, 1].Value = "ИТОГО:";
             worksheet.Cells[summaryRow, 7].Value = $"Общая выручка: {totalRevenue:N2} ₽";
@@ -191,14 +183,12 @@ namespace StudioRental_Markov.Services
             using var package = new ExcelPackage();
             var worksheet = package.Workbook.Worksheets.Add("Пользователи");
 
-            // Заголовки
             string[] headers = { "ID", "ФИО", "Email", "Телефон", "Роль", "Дата регистрации" };
             for (int i = 0; i < headers.Length; i++)
             {
                 worksheet.Cells[1, i + 1].Value = headers[i];
             }
 
-            // Стиль заголовков
             using (var range = worksheet.Cells[1, 1, 1, headers.Length])
             {
                 range.Style.Font.Bold = true;
@@ -209,7 +199,6 @@ namespace StudioRental_Markov.Services
                 range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             }
 
-            // Заполнение данных
             int row = 2;
             foreach (var user in users)
             {
@@ -255,7 +244,6 @@ namespace StudioRental_Markov.Services
 
             using var package = new ExcelPackage();
 
-            // Лист с информацией о студии
             var infoSheet = package.Workbook.Worksheets.Add("Информация о студии");
 
             infoSheet.Cells["A1"].Value = "ОТЧЕТ ПО СТУДИИ";
@@ -276,7 +264,6 @@ namespace StudioRental_Markov.Services
             infoSheet.Cells["A8"].Value = "Статус:";
             infoSheet.Cells["B8"].Value = studio.IsApproved ? "Подтверждена" : "На модерации";
 
-            // Статистика
             var totalBookings = bookings.Count;
             var totalHours = bookings.Sum(b => (b.EndTime - b.StartTime).TotalHours);
             var totalRevenue = bookings.Sum(b => b.TotalPrice);
@@ -292,7 +279,6 @@ namespace StudioRental_Markov.Services
             infoSheet.Cells["B13"].Style.Numberformat.Format = "#,##0.00 ₽";
             infoSheet.Cells["A13"].Style.Font.Bold = true;
 
-            // Лист с бронированиями
             var bookingsSheet = package.Workbook.Worksheets.Add("Бронирования");
 
             bookingsSheet.Cells["A1"].Value = "Дата начала";

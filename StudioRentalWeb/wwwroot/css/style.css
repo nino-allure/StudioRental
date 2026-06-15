@@ -1,43 +1,30 @@
-﻿/* ============================================
-   ROOT VARIABLES - Dark Premium Theme
-   ============================================ */
-:root {
-    /* Dark Premium Colors */
+﻿:root {
     --bg-primary: #0A0A0C;
     --bg-secondary: #131316;
     --bg-tertiary: #18181C;
     --bg-glass: rgba(20, 20, 25, 0.6);
-    /* Accent Neon Green */
     --accent: #00FF66;
     --accent-glow: rgba(0, 255, 102, 0.3);
     --accent-dark: #00CC52;
-    /* Text Colors */
     --text-primary: #FFFFFF;
     --text-secondary: #8E8E93;
     --text-tertiary: #5A5A5F;
-    /* Borders */
     --border-light: rgba(255, 255, 255, 0.06);
     --border-accent: rgba(0, 255, 102, 0.2);
-    /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
     --shadow-glow: 0 0 20px rgba(0, 255, 102, 0.2);
-    /* Radius */
     --radius-sm: 12px;
     --radius-md: 16px;
     --radius-lg: 20px;
     --radius-xl: 24px;
     --radius-2xl: 32px;
-    /* Transitions */
     --transition-fast: 0.15s ease;
     --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     --transition-slow: 0.4s ease;
 }
 
-/* ============================================
-   GLOBAL RESET
-   ============================================ */
 * {
     margin: 0;
     padding: 0;
@@ -54,9 +41,6 @@ body {
     position: relative;
 }
 
-/* ============================================
-   CANVAS WAVE BACKGROUND
-   ============================================ */
 .wave-container {
     position: fixed;
     top: 0;
@@ -86,18 +70,12 @@ body {
     pointer-events: none;
 }
 
-/* ============================================
-   MAIN CONTENT
-   ============================================ */
 .main-content {
     position: relative;
     z-index: 10;
     min-height: 100vh;
 }
 
-/* ============================================
-   CUSTOM SCROLLBAR
-   ============================================ */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -117,9 +95,6 @@ body {
         background: var(--accent);
     }
 
-/* ============================================
-   CONTAINER
-   ============================================ */
 .container {
     max-width: 1440px;
     margin: 0 auto;
@@ -132,9 +107,6 @@ body {
     }
 }
 
-/* ============================================
-   GLASS NAVIGATION
-   ============================================ */
 .glass-nav {
     position: sticky;
     top: 0;
@@ -194,9 +166,6 @@ body {
     color: var(--text-primary);
 }
 
-/* ============================================
-   GLASS PANEL
-   ============================================ */
 .glass-panel {
     background: var(--bg-glass);
     backdrop-filter: blur(20px);
@@ -205,9 +174,6 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-/* ============================================
-   SKEUOMORPHIC BUTTON
-   ============================================ */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -283,9 +249,6 @@ body {
         color: var(--accent);
     }
 
-/* ============================================
-   SKEUOMORPHIC KNOB
-   ============================================ */
 .skeuo-knob {
     width: 48px;
     height: 48px;
@@ -315,9 +278,6 @@ body {
         box-shadow: 0 0 12px var(--accent-glow);
     }
 
-/* ============================================
-   SKEUOMORPHIC FADER
-   ============================================ */
 .skeuo-fader {
     width: 100%;
     height: 4px;
@@ -342,9 +302,6 @@ body {
         transition: left var(--transition);
     }
 
-/* ============================================
-   FORM CONTROLS
-   ============================================ */
 .form-group {
     margin-bottom: 24px;
 }
@@ -375,9 +332,6 @@ body {
         box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-/* ============================================
-   AUTH PAGES
-   ============================================ */
 .auth-container {
     min-height: calc(100vh - 72px);
     display: flex;
@@ -433,9 +387,6 @@ body {
             text-decoration: underline;
         }
 
-/* ============================================
-   ALERTS
-   ============================================ */
 .alert {
     padding: 14px 18px;
     border-radius: var(--radius-sm);
@@ -455,9 +406,6 @@ body {
     color: var(--accent);
 }
 
-/* ============================================
-   BENTO GRID
-   ============================================ */
 .bento-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -508,9 +456,6 @@ body {
     }
 }
 
-/* ============================================
-   STUDIO CARD
-   ============================================ */
 .studio-card {
     display: flex;
     flex-direction: column;
@@ -575,9 +520,6 @@ body {
         color: var(--text-secondary);
     }
 
-/* ============================================
-   GEAR TAGS
-   ============================================ */
 .gear-list {
     display: flex;
     flex-wrap: wrap;
@@ -599,9 +541,6 @@ body {
         color: var(--accent);
     }
 
-/* ============================================
-   SLOT CALENDAR
-   ============================================ */
 .slot-calendar {
     display: flex;
     gap: 8px;
@@ -636,9 +575,6 @@ body {
         cursor: not-allowed;
     }
 
-/* ============================================
-   STAT CARDS
-   ============================================ */
 .stat-number {
     font-size: 36px;
     font-weight: 700;
@@ -667,9 +603,6 @@ body {
     text-align: center;
 }
 
-/* ============================================
-   TABLE STYLES
-   ============================================ */
 .table-container {
     background: rgba(19, 19, 22, 0.7);
     backdrop-filter: blur(10px);
@@ -706,9 +639,6 @@ tr:hover td {
     background: rgba(255, 255, 255, 0.02);
 }
 
-/* ============================================
-   STATUS BADGES
-   ============================================ */
 .status-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -747,9 +677,6 @@ tr:hover td {
     color: #ef4444;
 }
 
-/* ============================================
-   FILTERS SECTION
-   ============================================ */
 .filter-section {
     display: flex;
     gap: 24px;
@@ -780,9 +707,6 @@ tr:hover td {
     margin-bottom: 32px;
 }
 
-/* ============================================
-   ADMIN NAVIGATION
-   ============================================ */
 .admin-nav {
     display: flex;
     gap: 12px;
@@ -808,9 +732,6 @@ tr:hover td {
             background: rgba(0, 255, 102, 0.1);
         }
 
-/* ============================================
-   HERO SECTION
-   ============================================ */
 .hero {
     padding: 80px 0 60px;
     text-align: center;
@@ -834,9 +755,6 @@ tr:hover td {
         margin: 0 auto 32px;
     }
 
-/* ============================================
-   SECTION TITLE
-   ============================================ */
 .section-title {
     font-size: 28px;
     font-weight: 700;
@@ -848,9 +766,6 @@ tr:hover td {
     -webkit-text-fill-color: transparent;
 }
 
-/* ============================================
-   STUDIO HEADER
-   ============================================ */
 .studio-header {
     display: flex;
     justify-content: space-between;
@@ -860,9 +775,6 @@ tr:hover td {
     gap: 16px;
 }
 
-/* ============================================
-   BOOKING FORM
-   ============================================ */
 .booking-form {
     background: var(--bg-glass);
     backdrop-filter: blur(10px);
@@ -871,9 +783,6 @@ tr:hover td {
     border: 1px solid var(--border-light);
 }
 
-/* ============================================
-   CARD GRID
-   ============================================ */
 .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -935,9 +844,6 @@ tr:hover td {
     margin-top: 12px;
 }
 
-/* ============================================
-   FOOTER
-   ============================================ */
 .footer {
     text-align: center;
     padding: 48px 0;
@@ -947,9 +853,6 @@ tr:hover td {
     font-size: 13px;
 }
 
-/* ============================================
-   NOTIFICATIONS
-   ============================================ */
 .notification-container {
     position: fixed;
     bottom: 24px;
@@ -1014,9 +917,6 @@ tr:hover td {
     }
 }
 
-/* ============================================
-   PAGINATION
-   ============================================ */
 .pagination {
     display: flex;
     justify-content: center;
@@ -1024,9 +924,6 @@ tr:hover td {
     margin-top: 32px;
 }
 
-/* ============================================
-   ANIMATIONS
-   ============================================ */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -1053,9 +950,6 @@ tr:hover td {
     }
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
 @media (max-width: 768px) {
     .hero h1 {
         font-size: 40px;

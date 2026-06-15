@@ -185,7 +185,7 @@ namespace StudioRentalWeb.Controllers
         [Route("Admin/EditStudio")]
         public async Task<IActionResult> EditStudio(StudioViewModel model)
         {
-            Console.WriteLine($"=== EDIT STUDIO POST CALLED === ID: {model.Id}");
+            Console.WriteLine($"EDIT STUDIO POST CALLED ID: {model.Id}");
             Console.WriteLine($"Name: {model.Name}");
             Console.WriteLine($"Address: {model.Address}");
             Console.WriteLine($"Price: {model.PricePerHour}");

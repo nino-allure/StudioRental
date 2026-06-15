@@ -9,16 +9,15 @@ namespace StudioRental_Markov.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")] // Все методы доступны только администраторам
+    [Authorize(Roles = "Admin")] 
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly LoggingService _logging; // Сервис логирования
-
+        private readonly LoggingService _logging;
         public UsersController(AppDbContext db, LoggingService logging)
         {
             _db = db;
-            _logging = logging; // Инициализация сервиса логирования
+            _logging = logging; 
         }
 
         /// <summary>
@@ -40,7 +39,6 @@ namespace StudioRental_Markov.Controllers
                     })
                     .ToListAsync();
 
-                // Логируем получение списка пользователей
                 await _logging.LogInfoAsync("User", "GetAll", $"Получен список пользователей. Количество: {users.Count}");
 
                 return Ok(users);
@@ -91,7 +89,6 @@ namespace StudioRental_Markov.Controllers
                 return NotFound();
             }
 
-            // Защита от удаления администратора
             if (user.Role == "Admin")
             {
                 await _logging.LogWarningAsync("User", "Delete",
@@ -99,7 +96,6 @@ namespace StudioRental_Markov.Controllers
                 return BadRequest("Нельзя удалить администратора");
             }
 
-            // Проверяем, есть ли у пользователя активные бронирования
             var hasActiveBookings = await _db.Bookings
                 .AnyAsync(b => b.CustomerId == id && b.Status != "Cancelled");
 
@@ -114,7 +110,6 @@ namespace StudioRental_Markov.Controllers
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
 
-            // Логируем удаление пользователя
             await _logging.LogUserAsync("Delete", $"Удален пользователь", id,
                 $"Информация: {userInfo}, Роль: {user.Role}");
 

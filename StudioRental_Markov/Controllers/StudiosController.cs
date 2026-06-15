@@ -12,12 +12,12 @@ namespace StudioRental_Markov.Controllers
     public class StudiosController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly LoggingService _logging; // Сервис логирования
+        private readonly LoggingService _logging; 
 
         public StudiosController(AppDbContext db, LoggingService logging)
         {
             _db = db;
-            _logging = logging; // Инициализация сервиса логирования
+            _logging = logging; 
         }
 
         /// <summary>
@@ -52,7 +52,6 @@ namespace StudioRental_Markov.Controllers
                     })
                     .ToListAsync();
 
-                // Логируем получение списка студий (без个人信息)
                 await _logging.LogInfoAsync("Studio", "GetAll", $"Получен список студий. Количество: {studios.Count}");
 
                 return Ok(studios);
@@ -99,7 +98,6 @@ namespace StudioRental_Markov.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Получаем ID текущего пользователя из токена
             var ownerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             studio.OwnerId = ownerId;
             studio.CreatedAt = DateTime.Now;
@@ -108,7 +106,6 @@ namespace StudioRental_Markov.Controllers
             _db.Studios.Add(studio);
             await _db.SaveChangesAsync();
 
-            // Логируем создание студии
             await _logging.LogStudioAsync("Create", $"Создана новая студия", studio.Id,
                 $"Название: {studio.Name}, " +
                 $"Адрес: {studio.Address}, " +
@@ -132,7 +129,6 @@ namespace StudioRental_Markov.Controllers
                 return NotFound(new { message = "Студия не найдена" });
             }
 
-            // Сохраняем старые значения для логирования изменений
             var oldValues = new
             {
                 studio.Name,
@@ -142,7 +138,6 @@ namespace StudioRental_Markov.Controllers
                 studio.ImageUrl
             };
 
-            // Обновляем поля
             studio.Name = updatedStudio.Name;
             studio.Description = updatedStudio.Description;
             studio.Address = updatedStudio.Address;
@@ -151,7 +146,6 @@ namespace StudioRental_Markov.Controllers
 
             await _db.SaveChangesAsync();
 
-            // Логируем изменения
             await _logging.LogStudioAsync("Update", $"Обновлена студия", id,
                 $"Изменения: " +
                 $"Название: '{oldValues.Name}' -> '{studio.Name}', " +
@@ -175,7 +169,6 @@ namespace StudioRental_Markov.Controllers
                 return NotFound();
             }
 
-            // Проверяем, есть ли активные бронирования
             var hasActiveBookings = await _db.Bookings
                 .AnyAsync(b => b.StudioId == id && b.Status != "Cancelled");
 
@@ -190,7 +183,6 @@ namespace StudioRental_Markov.Controllers
             _db.Studios.Remove(studio);
             await _db.SaveChangesAsync();
 
-            // Логируем удаление студии
             await _logging.LogStudioAsync("Delete", $"Удалена студия", id,
                 $"Название: {studioName}, Адрес: {studio.Address}");
 

@@ -9,7 +9,6 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем CORS (ВАЖНО!)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -90,7 +89,6 @@ builder.Services.AddScoped<LoggingService>();
 
 var app = builder.Build();
 
-// Используем CORS
 app.UseCors("AllowAll");
 
 app.UseSwagger();
@@ -122,10 +120,6 @@ using (var scope = app.Services.CreateScope())
         };
         db.Users.Add(admin);
         db.SaveChanges();
-        Console.WriteLine("=== АДМИН СОЗДАН ===");
-        Console.WriteLine("Email: admin@studiorental.com");
-        Console.WriteLine("Password: admin123");
-        Console.WriteLine("===================");
     }
 }
 

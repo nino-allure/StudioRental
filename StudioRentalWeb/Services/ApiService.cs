@@ -203,25 +203,20 @@ namespace StudioRentalWeb.Services
                 {
                     var data = await response.Content.ReadAsByteArrayAsync();
 
-                    // Получаем путь к папке Загрузки (работает на всех версиях .NET)
                     string downloadsPath;
 
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        // Windows
+
                         downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
                     }
                     else
                     {
-                        // Linux/Mac
-                        downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Downloads");
                     }
 
-                    // Создаем папку если её нет
                     if (!Directory.Exists(downloadsPath))
                         Directory.CreateDirectory(downloadsPath);
 
-                    // Генерируем уникальное имя файла, если такой уже существует
                     var fullPath = Path.Combine(downloadsPath, fileName);
                     int counter = 1;
                     while (System.IO.File.Exists(fullPath))

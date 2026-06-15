@@ -71,7 +71,6 @@ namespace StudioRental_Markov.Controllers
                 })
                 .ToListAsync();
 
-            // Логируем просмотр логов
             await _logging.LogInfoAsync("Logs", "GetLogs",
                 $"Просмотр логов. Фильтры: level={level}, category={category}, page={page}. Найдено: {totalCount} записей");
 
@@ -95,32 +94,26 @@ namespace StudioRental_Markov.Controllers
 
             var stats = new
             {
-                // Общее количество логов
                 TotalLogs = await _db.SystemLogs.CountAsync(),
 
-                // Ошибки за последние 24 часа
                 ErrorsLast24h = await _db.SystemLogs
                     .CountAsync(l => l.LogLevel == "ERROR" && l.CreatedAt >= DateTime.Now.AddDays(-1)),
 
-                // Предупреждения за последние 24 часа
                 WarningsLast24h = await _db.SystemLogs
                     .CountAsync(l => l.LogLevel == "WARNING" && l.CreatedAt >= DateTime.Now.AddDays(-1)),
 
-                // Количество логов по категориям за последнюю неделю
                 LogsByCategory = await _db.SystemLogs
                     .Where(l => l.CreatedAt >= weekAgo)
                     .GroupBy(l => l.Category)
                     .Select(g => new { Category = g.Key, Count = g.Count() })
                     .ToListAsync(),
 
-                // Количество ошибок по категориям за последнюю неделю
                 ErrorsByCategory = await _db.SystemLogs
                     .Where(l => l.LogLevel == "ERROR" && l.CreatedAt >= weekAgo)
                     .GroupBy(l => l.Category)
                     .Select(g => new { Category = g.Key, Count = g.Count() })
                     .ToListAsync(),
 
-                // Последние 10 ошибок
                 RecentErrors = await _db.SystemLogs
                     .Where(l => l.LogLevel == "ERROR")
                     .OrderByDescending(l => l.CreatedAt)
@@ -204,9 +197,6 @@ namespace StudioRental_Markov.Controllers
             var logs = await query
                 .OrderByDescending(l => l.CreatedAt)
                 .ToListAsync();
-
-            // Здесь можно добавить экспорт в Excel через EPPlus
-            // Для простоты пока возвращаем JSON с логами
 
             await _logging.LogInfoAsync("Logs", "ExportLogs",
                 $"Экспорт логов. Найдено записей: {logs.Count}");

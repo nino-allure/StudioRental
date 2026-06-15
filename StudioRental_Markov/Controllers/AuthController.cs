@@ -12,13 +12,13 @@ namespace StudioRental_Markov.Controllers
     {
         private readonly AppDbContext _db;
         private readonly JwtService _jwtService;
-        private readonly LoggingService _logging; // Сервис логирования
+        private readonly LoggingService _logging;
 
         public AuthController(AppDbContext db, JwtService jwtService, LoggingService logging)
         {
             _db = db;
             _jwtService = jwtService;
-            _logging = logging; // Инициализация сервиса логирования
+            _logging = logging;
         }
 
         /// <summary>
@@ -27,17 +27,14 @@ namespace StudioRental_Markov.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            // Логируем попытку регистрации
             await _logging.LogAuthAsync("Register", $"Попытка регистрации для email: {request.Email}", false);
 
-            // Валидация входных данных
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.FullName))
             {
                 await _logging.LogAuthAsync("Register", $"Ошибка регистрации: не все поля заполнены для {request.Email}", false);
                 return BadRequest(new { message = "Все поля обязательны" });
             }
 
-            // Проверка на существующего пользователя
             var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (existingUser != null)
             {
@@ -45,7 +42,6 @@ namespace StudioRental_Markov.Controllers
                 return BadRequest(new { message = "Email уже используется" });
             }
 
-            // Создание нового пользователя
             var user = new User
             {
                 Email = request.Email,
@@ -53,16 +49,14 @@ namespace StudioRental_Markov.Controllers
                 Phone = request.Phone ?? "",
                 Role = "User",
                 CreatedAt = DateTime.Now,
-                Password = request.Password // В реальном проекте нужно хешировать!
+                Password = request.Password
             };
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            // Генерация JWT токена
             var token = _jwtService.GenerateToken(user);
 
-            // Логируем успешную регистрацию
             await _logging.LogAuthAsync("Register", $"Пользователь {request.Email} успешно зарегистрирован", true,
                 $"UserId: {user.Id}, FullName: {user.FullName}");
 
@@ -82,10 +76,8 @@ namespace StudioRental_Markov.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            // Логируем попытку входа
             await _logging.LogAuthAsync("Login", $"Попытка входа для email: {request.Email}", false);
 
-            // Поиск пользователя по email
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
@@ -93,7 +85,6 @@ namespace StudioRental_Markov.Controllers
                 return Unauthorized(new { message = "Неверный email или пароль" });
             }
 
-            // Проверка пароля (в реальном проекте используйте хеширование)
             if (user.Password != request.Password)
             {
                 await _logging.LogAuthAsync("Login", $"Неудачная попытка входа: неверный пароль для {request.Email}", false,
@@ -101,10 +92,8 @@ namespace StudioRental_Markov.Controllers
                 return Unauthorized(new { message = "Неверный email или пароль" });
             }
 
-            // Генерация токена
             var token = _jwtService.GenerateToken(user);
 
-            // Логируем успешный вход
             await _logging.LogAuthAsync("Login", $"Пользователь {request.Email} успешно вошел в систему", true,
                 $"UserId: {user.Id}, Role: {user.Role}");
 

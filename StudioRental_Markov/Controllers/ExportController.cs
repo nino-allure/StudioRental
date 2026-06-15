@@ -10,12 +10,12 @@ namespace StudioRental_Markov.Controllers
     public class ExportController : ControllerBase
     {
         private readonly ExcelExportService _excelExport;
-        private readonly LoggingService _logging; // Сервис логирования
+        private readonly LoggingService _logging; 
 
         public ExportController(ExcelExportService excelExport, LoggingService logging)
         {
             _excelExport = excelExport;
-            _logging = logging; // Инициализация сервиса логирования
+            _logging = logging; 
         }
 
         /// <summary>
@@ -29,7 +29,6 @@ namespace StudioRental_Markov.Controllers
             {
                 var fileContent = await _excelExport.ExportStudiosToExcel();
 
-                // Логируем экспорт студий
                 await _logging.LogInfoAsync("Export", "ExportStudios",
                     $"Экспорт списка студий в Excel. Размер файла: {fileContent.Length} байт");
 
@@ -55,7 +54,6 @@ namespace StudioRental_Markov.Controllers
             {
                 var fileContent = await _excelExport.ExportBookingsToExcel(startDate, endDate);
 
-                // Логируем экспорт бронирований с параметрами фильтрации
                 var filterInfo = startDate.HasValue || endDate.HasValue
                     ? $" (Фильтр: с {startDate:yyyy-MM-dd} по {endDate:yyyy-MM-dd})"
                     : "";

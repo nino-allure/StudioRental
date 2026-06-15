@@ -86,7 +86,6 @@ namespace StudioRental_Markov.Services
                 CreatedAt = DateTime.Now
             };
 
-            // Сохраняем в БД
             try
             {
                 _db.SystemLogs.Add(logEntry);
@@ -94,11 +93,9 @@ namespace StudioRental_Markov.Services
             }
             catch (Exception ex)
             {
-                // Если БД недоступна, хотя бы в файл запишем
                 await WriteToFileAsync(logEntry, ex);
             }
 
-            // Также пишем в файл
             await WriteToFileAsync(logEntry);
         }
 

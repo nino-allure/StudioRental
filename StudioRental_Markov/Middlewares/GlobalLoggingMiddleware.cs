@@ -38,7 +38,6 @@ namespace StudioRental_Markov.Middlewares
 
                 var duration = DateTime.Now - startTime;
 
-                // Логируем медленные запросы (> 3 секунд)
                 if (duration.TotalSeconds > 3)
                 {
                     await loggingService.LogWarningAsync(
