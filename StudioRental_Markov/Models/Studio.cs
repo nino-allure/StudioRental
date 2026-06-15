@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StudioRental_Markov.Models
 {
@@ -25,15 +25,26 @@ namespace StudioRental_Markov.Models
         [MaxLength(500)]
         public string? ImageUrl { get; set; }
 
+        // Хранение бинарных данных изображения
+        [MaxLength(5 * 1024 * 1024)] // 5MB максимум
+        public byte[]? ImageData { get; set; }
+
+        [MaxLength(50)]
+        public string? ImageContentType { get; set; }
+
         public bool IsApproved { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // Внешний ключ
         public int OwnerId { get; set; }
 
-        // Навигационное свойство
         [ForeignKey(nameof(OwnerId))]
         public virtual User? Owner { get; set; }
+
+        // Вспомогательный метод для получения base64 изображения
+        [NotMapped]
+        public string? ImageBase64 => ImageData != null
+            ? $"data:{ImageContentType};base64,{Convert.ToBase64String(ImageData)}"
+            : ImageUrl;
     }
 }

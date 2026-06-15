@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudioRental_Markov.Data;
@@ -85,11 +86,11 @@ namespace StudioRental_Markov.Controllers
         }
 
         /// <summary>
-        /// Создание новой студии (только для администраторов).
+        /// Создание новой студии с опциональным изображением
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] Studio studio)
+        public async Task<IActionResult> Create([FromForm] StudioCreateDto studioDto)
         {
             if (!ModelState.IsValid)
             {
@@ -99,28 +100,53 @@ namespace StudioRental_Markov.Controllers
             }
 
             var ownerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
-            studio.OwnerId = ownerId;
-            studio.CreatedAt = DateTime.Now;
-            studio.IsApproved = true; // Админ создает уже подтвержденную студию
+
+            var studio = new Studio
+            {
+                Name = studioDto.Name,
+                Description = studioDto.Description,
+                Address = studioDto.Address,
+                PricePerHour = studioDto.PricePerHour,
+                OwnerId = ownerId,
+                CreatedAt = DateTime.Now,
+                IsApproved = true
+            };
+
+            // Обработка загруженного изображения
+            if (studioDto.Image != null && studioDto.Image.Length > 0)
+            {
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(studioDto.Image.FileName).ToLowerInvariant();
+
+                if (allowedExtensions.Contains(extension) && studioDto.Image.Length <= 5 * 1024 * 1024)
+                {
+                    using var memoryStream = new MemoryStream();
+                    await studioDto.Image.CopyToAsync(memoryStream);
+                    studio.ImageData = memoryStream.ToArray();
+                    studio.ImageContentType = studioDto.Image.ContentType;
+                }
+            }
+            else if (!string.IsNullOrEmpty(studioDto.ImageUrl))
+            {
+                studio.ImageUrl = studioDto.ImageUrl;
+            }
 
             _db.Studios.Add(studio);
             await _db.SaveChangesAsync();
 
             await _logging.LogStudioAsync("Create", $"Создана новая студия", studio.Id,
-                $"Название: {studio.Name}, " +
-                $"Адрес: {studio.Address}, " +
-                $"Цена: {studio.PricePerHour:C}, " +
-                $"Администратор: {ownerId}");
+                $"Название: {studio.Name}, Адрес: {studio.Address}, Цена: {studio.PricePerHour:C}");
 
             return Ok(studio);
         }
 
+
         /// <summary>
-        /// Обновление информации о студии (только для администраторов).
+        /// Обновление информации о студии
         /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, [FromBody] Studio updatedStudio)
+        public async Task<IActionResult> Update(int id, [FromForm] StudioUpdateDto studioDto)
         {
             var studio = await _db.Studios.FindAsync(id);
             if (studio == null)
@@ -134,21 +160,46 @@ namespace StudioRental_Markov.Controllers
                 studio.Name,
                 studio.Description,
                 studio.Address,
-                studio.PricePerHour,
-                studio.ImageUrl
+                studio.PricePerHour
             };
 
-            studio.Name = updatedStudio.Name;
-            studio.Description = updatedStudio.Description;
-            studio.Address = updatedStudio.Address;
-            studio.PricePerHour = updatedStudio.PricePerHour;
-            studio.ImageUrl = updatedStudio.ImageUrl;
+            studio.Name = studioDto.Name;
+            studio.Description = studioDto.Description;
+            studio.Address = studioDto.Address;
+            studio.PricePerHour = studioDto.PricePerHour;
+
+            // Обработка нового изображения
+            if (studioDto.Image != null && studioDto.Image.Length > 0)
+            {
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(studioDto.Image.FileName).ToLowerInvariant();
+
+                if (allowedExtensions.Contains(extension) && studioDto.Image.Length <= 5 * 1024 * 1024)
+                {
+                    using var memoryStream = new MemoryStream();
+                    await studioDto.Image.CopyToAsync(memoryStream);
+                    studio.ImageData = memoryStream.ToArray();
+                    studio.ImageContentType = studioDto.Image.ContentType;
+                    studio.ImageUrl = null;
+                }
+            }
+            else if (studioDto.RemoveImage == true)
+            {
+                studio.ImageData = null;
+                studio.ImageContentType = null;
+                studio.ImageUrl = null;
+            }
+            else if (!string.IsNullOrEmpty(studioDto.ImageUrl))
+            {
+                studio.ImageUrl = studioDto.ImageUrl;
+                studio.ImageData = null;
+                studio.ImageContentType = null;
+            }
 
             await _db.SaveChangesAsync();
 
             await _logging.LogStudioAsync("Update", $"Обновлена студия", id,
-                $"Изменения: " +
-                $"Название: '{oldValues.Name}' -> '{studio.Name}', " +
+                $"Изменения: Название: '{oldValues.Name}' -> '{studio.Name}', " +
                 $"Адрес: '{oldValues.Address}' -> '{studio.Address}', " +
                 $"Цена: {oldValues.PricePerHour:C} -> {studio.PricePerHour:C}");
 
@@ -188,5 +239,81 @@ namespace StudioRental_Markov.Controllers
 
             return Ok(new { message = "Студия удалена" });
         }
+        /// <summary>
+        /// Загрузка изображения для студии
+        /// </summary>
+        [HttpPost("{id}/upload-image")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UploadImage(int id, IFormFile image)
+        {
+            var studio = await _db.Studios.FindAsync(id);
+            if (studio == null)
+            {
+                await _logging.LogWarningAsync("Studio", "UploadImage", $"Студия с ID {id} не найдена");
+                return NotFound(new { message = "Студия не найдена" });
+            }
+
+            if (image == null || image.Length == 0)
+            {
+                return BadRequest(new { message = "Файл не выбран" });
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest(new { message = "Допустимые форматы: JPG, JPEG, PNG, GIF, WEBP" });
+            }
+
+            if (image.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest(new { message = "Максимальный размер файла 5MB" });
+            }
+
+            using var memoryStream = new MemoryStream();
+            await image.CopyToAsync(memoryStream);
+
+            studio.ImageData = memoryStream.ToArray();
+            studio.ImageContentType = image.ContentType;
+            studio.ImageUrl = null; // Очищаем URL, так как используем бинарные данные
+
+            await _db.SaveChangesAsync();
+
+            await _logging.LogStudioAsync("UploadImage", $"Загружено изображение для студии", id,
+                $"Имя файла: {image.FileName}, Размер: {image.Length} байт");
+
+            return Ok(new { message = "Изображение загружено" });
+        }
+
+        /// <summary>
+        /// Получение изображения студии
+        /// </summary>
+        [HttpGet("{id}/image")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetImage(int id)
+        {
+            var studio = await _db.Studios.FindAsync(id);
+            if (studio == null)
+            {
+                return NotFound();
+            }
+
+            if (studio.ImageData != null && studio.ImageContentType != null)
+            {
+                return File(studio.ImageData, studio.ImageContentType);
+            }
+
+            // Возвращаем изображение-заглушку
+            var defaultImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "studio-default.jpg");
+            if (System.IO.File.Exists(defaultImagePath))
+            {
+                var defaultImage = await System.IO.File.ReadAllBytesAsync(defaultImagePath);
+                return File(defaultImage, "image/jpeg");
+            }
+
+            return NotFound();
+        }
+
     }
 }

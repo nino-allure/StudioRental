@@ -35,11 +35,27 @@ namespace StudioRentalWeb.Services
                 AddAuthorizationHeader();
                 var response = await _httpClient.GetAsync($"{BaseUrl}/{endpoint}");
 
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Response ({endpoint}): Status={response.StatusCode}, Content={content?.Substring(0, Math.Min(200, content?.Length ?? 0))}...");
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var data = JsonConvert.DeserializeObject<T>(content);
-                    return (data, null);
+                    try
+                    {
+                        var data = JsonConvert.DeserializeObject<T>(content);
+                        return (data, null);
+                    }
+                    catch (JsonException jex)
+                    {
+                        Console.WriteLine($"JSON Deserialize Error: {jex.Message}");
+                        var error = new ErrorHandlingService.ApiErrorResponse
+                        {
+                            StatusCode = (int)response.StatusCode,
+                            Title = "Ошибка формата данных",
+                            Message = "Ошибка при обработке ответа от сервера"
+                        };
+                        return (default, error);
+                    }
                 }
                 else
                 {
@@ -49,6 +65,7 @@ namespace StudioRentalWeb.Services
             }
             catch (HttpRequestException ex)
             {
+                Console.WriteLine($"HttpRequestException: {ex.Message}");
                 var error = new ErrorHandlingService.ApiErrorResponse
                 {
                     StatusCode = 0,
@@ -59,6 +76,7 @@ namespace StudioRentalWeb.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Exception: {ex.Message}");
                 var error = new ErrorHandlingService.ApiErrorResponse
                 {
                     StatusCode = 0,
@@ -212,6 +230,7 @@ namespace StudioRentalWeb.Services
                     }
                     else
                     {
+                        downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
                     }
 
                     if (!Directory.Exists(downloadsPath))
@@ -298,6 +317,160 @@ namespace StudioRentalWeb.Services
                     Message = ex.Message
                 };
                 return (null, error);
+            }
+        }
+        // StudioRentalWeb\Services\ApiService.cs - добавьте эти методы
+
+        /// <summary>
+        /// Создание студии с изображением
+        /// </summary>
+        public async Task<(T? Data, ErrorHandlingService.ApiErrorResponse? Error)> PostWithFileAsync<T>(string endpoint, object data, IFormFile? file = null)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+
+                using var formData = new MultipartFormDataContent();
+
+                // Добавляем все свойства объекта в form-data
+                var properties = data.GetType().GetProperties();
+                foreach (var prop in properties)
+                {
+                    var value = prop.GetValue(data)?.ToString();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        formData.Add(new StringContent(value), prop.Name);
+                    }
+                }
+
+                // Добавляем файл если есть
+                if (file != null)
+                {
+                    using var stream = new MemoryStream();
+                    await file.CopyToAsync(stream);
+                    stream.Position = 0;
+                    var fileContent = new ByteArrayContent(stream.ToArray());
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    formData.Add(fileContent, "Image", file.FileName);
+                }
+
+                var response = await _httpClient.PostAsync($"{BaseUrl}/{endpoint}", formData);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<T>(responseContent);
+                    return (result, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (default, error);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (default, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (default, error);
+            }
+        }
+
+        /// <summary>
+        /// Обновление студии с изображением
+        /// </summary>
+        public async Task<(bool Success, ErrorHandlingService.ApiErrorResponse? Error)> PutWithFileAsync(string endpoint, object data, IFormFile? file = null)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+
+                using var formData = new MultipartFormDataContent();
+
+                var properties = data.GetType().GetProperties();
+                foreach (var prop in properties)
+                {
+                    var value = prop.GetValue(data)?.ToString();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        formData.Add(new StringContent(value), prop.Name);
+                    }
+                }
+
+                if (file != null)
+                {
+                    using var stream = new MemoryStream();
+                    await file.CopyToAsync(stream);
+                    stream.Position = 0;
+                    var fileContent = new ByteArrayContent(stream.ToArray());
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    formData.Add(fileContent, "Image", file.FileName);
+                }
+
+                var response = await _httpClient.PutAsync($"{BaseUrl}/{endpoint}", formData);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+                else
+                {
+                    var error = await _errorHandling.HandleErrorResponse(response);
+                    return (false, error);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = $"Не удалось подключиться к серверу: {ex.Message}"
+                };
+                return (false, error);
+            }
+            catch (Exception ex)
+            {
+                var error = new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка",
+                    Message = ex.Message
+                };
+                return (false, error);
+            }
+        }
+
+        public async Task<byte[]?> GetImageAsync(string endpoint)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+                var response = await _httpClient.GetAsync($"{BaseUrl}/{endpoint}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadAsByteArrayAsync();
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
             }
         }
     }

@@ -34,6 +34,31 @@ namespace StudioRental_Markov.Controllers
                 var bookings = await _db.Bookings
                     .Include(b => b.Customer)
                     .Include(b => b.Studio)
+                    .Select(b => new
+                    {
+                        b.Id,
+                        b.StartTime,
+                        b.EndTime,
+                        b.TotalPrice,
+                        b.Status,
+                        b.CreatedAt,
+                        b.CustomerId,
+                        b.StudioId,
+                        Customer = b.Customer != null ? new
+                        {
+                            b.Customer.Id,
+                            b.Customer.FullName,
+                            b.Customer.Email,
+                            b.Customer.Phone
+                        } : null,
+                        Studio = b.Studio != null ? new
+                        {
+                            b.Studio.Id,
+                            b.Studio.Name,
+                            b.Studio.Address,
+                            b.Studio.PricePerHour
+                        } : null
+                    })
                     .ToListAsync();
 
                 await _logging.LogInfoAsync("Booking", "GetAll", $"Получен список бронирований. Количество: {bookings.Count}");
@@ -43,7 +68,7 @@ namespace StudioRental_Markov.Controllers
             catch (Exception ex)
             {
                 await _logging.LogErrorAsync("Booking", "GetAll", "Ошибка при получении списка бронирований", ex);
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 

@@ -1,4 +1,5 @@
-﻿@model StudioRentalWeb.Models.StudioViewModel
+﻿@* StudioRentalWeb\Views\Admin\EditStudio.cshtml *@
+@model StudioRentalWeb.Models.StudioViewModel
 
 @{
     ViewData["Title"] = "Редактирование студии";
@@ -6,7 +7,7 @@
     var studioName = Model?.Name ?? "";
     var studioAddress = Model?.Address ?? "";
     var studioPrice = Model?.PricePerHour ?? 0;
-    var studioImage = Model?.ImageUrl ?? "/img/gear.jpg";
+    var studioImage = Model?.ImageUrl ?? "";
     var studioDescription = Model?.Description ?? "";
 }
 
@@ -24,7 +25,7 @@
     </div>
 
     <div class="glass-panel" style="max-width: 800px; margin: 0 auto; padding: 40px;">
-        <form method="post" action="/Admin/EditStudio">
+        <form method="post" action="/Admin/EditStudio" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
 
             <input type="hidden" name="Id" value="@studioId" />
@@ -41,12 +42,45 @@
 
             <div class="form-group">
                 <label>Цена за час (₽) *</label>
-                <input name="PricePerHour" class="form-control" type="number" step="100" value="@studioPrice" required>
+                <input name="PricePerHour" class="form-control" value="@studioPrice" required>
             </div>
 
             <div class="form-group">
-                <label>URL изображения</label>
-                <input name="ImageUrl" class="form-control" value="@studioImage">
+                <label>Текущее изображение</label>
+                <div id="currentImageContainer" style="margin-bottom: 12px;">
+                    @if (!string.IsNullOrEmpty(studioImage))
+                    {
+                        <img src="@studioImage" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                    }
+                    else
+                    {
+                        <div style="background: var(--bg-tertiary); padding: 20px; text-align: center; border-radius: 8px;">
+                            <span style="color: var(--text-secondary);">Изображение не загружено</span>
+                        </div>
+                    }
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="removeImage" value="true">
+                        <span style="color: #ef4444;">Удалить текущее изображение</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>URL изображения (альтернатива)</label>
+                <input name="ImageUrl" class="form-control" placeholder="/img/gear.jpg" value="@studioImage">
+            </div>
+
+            <div class="form-group">
+                <label>Или выберите новый файл изображения</label>
+                <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp"
+                       onchange="previewImage(this)">
+                <small style="color: var(--text-secondary);">Допустимые форматы: JPG, PNG, GIF, WEBP. Максимум 5MB</small>
+                <div id="imagePreview" style="margin-top: 12px; display: none;">
+                    <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                </div>
             </div>
 
             <div class="form-group">
@@ -63,10 +97,39 @@
 </div>
 
 <script>
-    var form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function() {
-            console.log('Form submitted! Studio ID: @studioId');
+    function previewImage(input) {
+        var preview = document.getElementById('imagePreview');
+        var previewImg = document.getElementById('previewImg');
+        var currentContainer = document.getElementById('currentImageContainer');
+
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+                if (currentContainer) currentContainer.style.opacity = '0.5';
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+            if (currentContainer) currentContainer.style.opacity = '1';
+        }
+    }
+
+    // Обработка чекбокса удаления
+    var removeCheckbox = document.querySelector('input[name="removeImage"]');
+    var imageUrlInput = document.querySelector('input[name="ImageUrl"]');
+    var fileInput = document.querySelector('input[name="image"]');
+
+    if (removeCheckbox) {
+        removeCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                if (imageUrlInput) imageUrlInput.disabled = true;
+                if (fileInput) fileInput.disabled = true;
+            } else {
+                if (imageUrlInput) imageUrlInput.disabled = false;
+                if (fileInput) fileInput.disabled = false;
+            }
         });
     }
 </script>

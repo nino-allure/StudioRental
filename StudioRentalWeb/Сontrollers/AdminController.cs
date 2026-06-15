@@ -101,8 +101,7 @@ namespace StudioRentalWeb.Controllers
 
         // Добавление студии
         [HttpPost]
-        [Route("Admin/CreateStudio")]
-        public async Task<IActionResult> CreateStudio(StudioViewModel model)
+        public async Task<IActionResult> CreateStudio(StudioViewModel model, IFormFile? image)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
@@ -114,14 +113,13 @@ namespace StudioRentalWeb.Controllers
             var studioData = new
             {
                 name = model.Name,
-                description = model.Description,
+                description = model.Description ?? "",
                 address = model.Address,
                 pricePerHour = model.PricePerHour,
-                imageUrl = model.ImageUrl ?? "/img/gear.jpg",
-                isApproved = true
+                imageUrl = model.ImageUrl
             };
 
-            var (result, error) = await _api.PostAsync<Studio>("Studios", studioData);
+            var (result, error) = await _api.PostWithFileAsync<Studio>("Studios", studioData, image);
 
             if (error != null)
             {
@@ -132,7 +130,7 @@ namespace StudioRentalWeb.Controllers
             _notifications.AddSuccess(this, $"Студия \"{model.Name}\" успешно создана");
             return RedirectToAction("Studios");
         }
-        
+
         // Удаление студии
         [HttpPost]
         public async Task<IActionResult> DeleteStudio(int id)
@@ -182,13 +180,9 @@ namespace StudioRentalWeb.Controllers
             return View(model);
         }
         [HttpPost]
-        [Route("Admin/EditStudio")]
-        public async Task<IActionResult> EditStudio(StudioViewModel model)
+        public async Task<IActionResult> EditStudio(StudioViewModel model, IFormFile? image, bool? removeImage)
         {
             Console.WriteLine($"EDIT STUDIO POST CALLED ID: {model.Id}");
-            Console.WriteLine($"Name: {model.Name}");
-            Console.WriteLine($"Address: {model.Address}");
-            Console.WriteLine($"Price: {model.PricePerHour}");
 
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
@@ -204,10 +198,11 @@ namespace StudioRentalWeb.Controllers
                 description = model.Description ?? "",
                 address = model.Address,
                 pricePerHour = model.PricePerHour,
-                imageUrl = model.ImageUrl ?? "/img/gear.jpg"
+                imageUrl = model.ImageUrl,
+                removeImage = removeImage ?? false
             };
 
-            var (success, apiError) = await _api.PutAsync($"Studios/{model.Id}", studioData);
+            var (success, apiError) = await _api.PutWithFileAsync($"Studios/{model.Id}", studioData, image);
 
             if (apiError != null)
             {
@@ -225,15 +220,23 @@ namespace StudioRentalWeb.Controllers
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
-            var (bookings, error) = await _api.GetAsync<List<Booking>>("Bookings");
-
-            if (error != null)
+            try
             {
-                _notifications.AddError(this, error.Message ?? "Ошибка при загрузке бронирований");
+                var (bookings, error) = await _api.GetAsync<List<Booking>>("Bookings");
+
+                if (error != null)
+                {
+                    _notifications.AddError(this, error.Message ?? "Ошибка при загрузке бронирований");
+                    return View(new List<Booking>());
+                }
+
+                return View(bookings ?? new List<Booking>());
+            }
+            catch (Exception ex)
+            {
+                _notifications.AddError(this, $"Ошибка загрузки: {ex.Message}");
                 return View(new List<Booking>());
             }
-
-            return View(bookings ?? new List<Booking>());
         }
         // Подтверждение бронирования
         public async Task<IActionResult> ConfirmBooking(int id)
