@@ -62,6 +62,8 @@
                     var isApproved = studio.IsApproved;
                     var statusClass = isApproved ? "status-confirmed" : "status-pending";
                     var statusText = isApproved ? "Активна" : "На модерации";
+                    var imageUrl = $"/api/Studios/{studioId}/image";
+
 
                     <tr data-name="@studioName.ToLower()">
                         <td>@studioId</td>

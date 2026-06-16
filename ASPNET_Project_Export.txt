@@ -1,5 +1,5 @@
-﻿ASP.NET PROJECT EXPORT - 06/15/2026 18:28:50
-Project Path: C:\Users\student-a502.PERMAVIAT\Desktop\project
+﻿ASP.NET PROJECT EXPORT - 06/16/2026 10:37:38
+Project Path: C:\Users\student-a502.PERMAVIAT\source\repos\StudioRental\
 Total Files: 72
 
 Project Structure:
@@ -326,10 +326,20 @@ namespace StudioRentalWeb.Models
         public string Address { get; set; } = string.Empty;
         public decimal PricePerHour { get; set; }
         public string? ImageUrl { get; set; }
+        public byte[]? ImageData { get; set; } 
+        public string? ImageContentType { get; set; }
         public bool IsApproved { get; set; }
         public DateTime CreatedAt { get; set; }
         public int OwnerId { get; set; }
         public User? Owner { get; set; }
+        public string GetImageUrl()
+        {
+            if (ImageData != null && ImageContentType != null)
+            {
+                return $"data:{ImageContentType};base64,{Convert.ToBase64String(ImageData)}";
+            }
+            return ImageUrl ?? "/img/studio.jpg";
+        }
     }
 }
 
@@ -2023,9 +2033,16 @@ TYPE: .cshtml
                     var isApproved = studio.IsApproved;
                     var statusClass = isApproved ? "status-confirmed" : "status-pending";
                     var statusText = isApproved ? "Активна" : "На модерации";
+                    var imageUrl = $"/api/Studios/{studioId}/image";
+
 
                     <tr data-name="@studioName.ToLower()">
                         <td>@studioId</td>
+                        <td>
+                        <img src="@imageUrl" alt="@studioName"
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
+                                 onerror="this.src='/img/studio1.jpg'">
+                        </td>
                         <td><strong>@studioName</strong></td>
                         <td>@shortAddress</td>
                         <td style="color: #00FF66;">@studioPrice ₽</td>
@@ -2760,7 +2777,7 @@ TYPE: .cshtml
     var studioAddress = studio?.Address ?? "";
     var studioPrice = studio?.PricePerHour ?? 0;
     var studioPriceFormatted = studioPrice.ToString("N0");
-    var studioImage = (!string.IsNullOrEmpty(studio?.ImageUrl) ? studio.ImageUrl : "/img/gear.jpg");
+    var studioImage = $"/api/Studios/{studio?.Id}/image";
     var studioDescription = studio?.Description ?? "Профессиональная студия звукозаписи с новейшим оборудованием. Идеально подходит для записи вокала, инструментов и сведения.";
 }
 
@@ -2779,7 +2796,9 @@ TYPE: .cshtml
         <!-- Gallery Card -->
         <div class="bento-card card-large">
             <div class="studio-image" style="height: 300px;">
-                <img src="@studioImage" alt="@studioName" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="@studioImage" alt="@studioName"
+                     style="width: 100%; height: 100%; object-fit: cover;"
+                     onerror="this.src='/img/studio1.jpg'">
             </div>
         </div>
 
@@ -2921,16 +2940,15 @@ TYPE: .cshtml
                 var studioName = studio.Name;
                 var studioAddress = studio.Address;
                 var studioPrice = studio.PricePerHour.ToString("N0");
-                // Используем API для получения изображения, если нет URL
-                var imageUrl = !string.IsNullOrEmpty(studio.ImageUrl)
-                ? studio.ImageUrl
-                : $"/api/Studios/{studioId}/image";
+                var imageUrl = $"/api/Studios/{studioId}/image";
                 var studioDesc = studio.Description ?? "";
                 var shortDesc = studioDesc.Length > 80 ? studioDesc.Substring(0, 80) + "..." : studioDesc;
 
                 <a href="/Studios/Details/@studioId" class="card" data-price="@studio.PricePerHour">
                     <div class="card-image">
-                        <img src="@imageUrl" alt="@studioName" onerror="this.src='/img/studio1.jpg'">
+                        <img src="@imageUrl" alt="@studioName"
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="this.src='/img/studio1.jpg'">
                     </div>
                     <div class="card-content">
                         <div class="card-title">@studioName</div>

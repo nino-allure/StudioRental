@@ -1,6 +1,5 @@
 ﻿@* StudioRentalWeb\Views\Admin\CreateStudio.cshtml *@
 @model StudioRentalWeb.Models.StudioViewModel
-
 @{
     ViewData["Title"] = "Добавление студии";
 }
@@ -19,42 +18,50 @@
     </div>
 
     <div class="glass-panel" style="max-width: 800px; margin: 0 auto; padding: 40px;">
-        <form method="post" action="/Admin/CreateStudio" enctype="multipart/form-data">
+        <form method="post" asp-action="CreateStudio" asp-controller="Admin" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
 
+            @* Вывод общих ошибок модели (например, из контроллера) *@
+            <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom: 20px;"></div>
+
             <div class="form-group">
-                <label>Название студии *</label>
-                <input name="Name" class="form-control" placeholder="Prime Studio" required>
+                <label asp-for="Name">Название студии *</label>
+                <input asp-for="Name" class="form-control" placeholder="Prime Studio" />
+                <span asp-validation-for="Name" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
-                <label>Адрес *</label>
-                <input name="Address" class="form-control" placeholder="Москва, ул. Тверская, 15" required>
+                <label asp-for="Address">Адрес *</label>
+                <input asp-for="Address" class="form-control" placeholder="Москва, ул. Тверская, 15" />
+                <span asp-validation-for="Address" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
-                <label>Цена за час (₽) *</label>
-                <input name="PricePerHour" class="form-control" placeholder="2500" required>
+                <label asp-for="PricePerHour">Цена за час (₽) *</label>
+                <input asp-for="PricePerHour" class="form-control" placeholder="2500" />
+                <span asp-validation-for="PricePerHour" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
-                <label>URL изображения (или загрузите файл ниже)</label>
-                <input name="ImageUrl" class="form-control" placeholder="/img/studio.jpg">
+                <label asp-for="ImageUrl">URL изображения (или загрузите файл ниже)</label>
+                <input asp-for="ImageUrl" class="form-control" placeholder="/img/studio.jpg" />
+                <span asp-validation-for="ImageUrl" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
                 <label>Или выберите файл изображения</label>
-                <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp"
-                       onchange="previewImage(this)">
+                <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewImage(this)" />
                 <small style="color: var(--text-secondary);">Допустимые форматы: JPG, PNG, GIF, WEBP. Максимум 5MB</small>
+
                 <div id="imagePreview" style="margin-top: 12px; display: none;">
-                    <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                    <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px;" />
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Описание</label>
-                <textarea name="Description" class="form-control" rows="5" placeholder="Профессиональная студия звукозаписи..."></textarea>
+                <label asp-for="Description">Описание</label>
+                <textarea asp-for="Description" class="form-control" rows="5" placeholder="Профессиональная студия звукозаписи..."></textarea>
+                <span asp-validation-for="Description" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div style="display: flex; gap: 16px; margin-top: 32px;">
@@ -69,7 +76,7 @@
     function previewImage(input) {
         var preview = document.getElementById('imagePreview');
         var previewImg = document.getElementById('previewImg');
-        
+
         if (input.files && input.files[0]) {
             var reader = new FileReader();
             reader.onload = function(e) {
@@ -82,3 +89,8 @@
         }
     }
 </script>
+
+@* Подключение jQuery Validation для мгновенной проверки на клиенте *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

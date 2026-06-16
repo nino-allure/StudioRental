@@ -20,7 +20,7 @@
             {
                 return $"data:{ImageContentType};base64,{Convert.ToBase64String(ImageData)}";
             }
-            return ImageUrl ?? "/img/gear.jpg";
+            return ImageUrl ?? "/img/studio.jpg";
         }
     }
 }

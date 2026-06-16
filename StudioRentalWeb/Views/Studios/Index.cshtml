@@ -26,16 +26,15 @@
                 var studioName = studio.Name;
                 var studioAddress = studio.Address;
                 var studioPrice = studio.PricePerHour.ToString("N0");
-                // Используем API для получения изображения, если нет URL
-                var imageUrl = !string.IsNullOrEmpty(studio.ImageUrl)
-                ? studio.ImageUrl
-                : $"/api/Studios/{studioId}/image";
+                var imageUrl = $"/api/Studios/{studioId}/image";
                 var studioDesc = studio.Description ?? "";
                 var shortDesc = studioDesc.Length > 80 ? studioDesc.Substring(0, 80) + "..." : studioDesc;
 
                 <a href="/Studios/Details/@studioId" class="card" data-price="@studio.PricePerHour">
                     <div class="card-image">
-                        <img src="@imageUrl" alt="@studioName" onerror="this.src='/img/studio1.jpg'">
+                        <img src="https://localhost:7175/api/Studios/@studioId/image" alt="@studioName"
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="this.src='/images/studio1.jpg'">
                     </div>
                     <div class="card-content">
                         <div class="card-title">@studioName</div>

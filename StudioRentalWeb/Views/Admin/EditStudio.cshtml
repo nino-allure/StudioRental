@@ -3,12 +3,6 @@
 
 @{
     ViewData["Title"] = "Редактирование студии";
-    var studioId = Model?.Id ?? 0;
-    var studioName = Model?.Name ?? "";
-    var studioAddress = Model?.Address ?? "";
-    var studioPrice = Model?.PricePerHour ?? 0;
-    var studioImage = Model?.ImageUrl ?? "";
-    var studioDescription = Model?.Description ?? "";
 }
 
 <div class="container">
@@ -25,32 +19,39 @@
     </div>
 
     <div class="glass-panel" style="max-width: 800px; margin: 0 auto; padding: 40px;">
-        <form method="post" action="/Admin/EditStudio" enctype="multipart/form-data">
+        <form method="post" asp-action="EditStudio" asp-controller="Admin" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
 
-            <input type="hidden" name="Id" value="@studioId" />
+            @* Вывод общих ошибок модели *@
+            <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom: 20px;"></div>
+
+            @* Скрытое поле для ID *@
+            <input type="hidden" asp-for="Id" />
 
             <div class="form-group">
-                <label>Название студии *</label>
-                <input name="Name" class="form-control" value="@studioName" required>
+                <label asp-for="Name">Название студии *</label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
-                <label>Адрес *</label>
-                <input name="Address" class="form-control" value="@studioAddress" required>
+                <label asp-for="Address">Адрес *</label>
+                <input asp-for="Address" class="form-control" />
+                <span asp-validation-for="Address" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
-                <label>Цена за час (₽) *</label>
-                <input name="PricePerHour" class="form-control" value="@studioPrice" required>
+                <label asp-for="PricePerHour">Цена за час (₽) *</label>
+                <input asp-for="PricePerHour" class="form-control" />
+                <span asp-validation-for="PricePerHour" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
                 <label>Текущее изображение</label>
                 <div id="currentImageContainer" style="margin-bottom: 12px;">
-                    @if (!string.IsNullOrEmpty(studioImage))
+                    @if (Model != null && !string.IsNullOrEmpty(Model.ImageUrl))
                     {
-                        <img src="@studioImage" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                        <img src="@Model.ImageUrl" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
                     }
                     else
                     {
@@ -69,8 +70,9 @@
             </div>
 
             <div class="form-group">
-                <label>URL изображения (альтернатива)</label>
-                <input name="ImageUrl" class="form-control" placeholder="/img/gear.jpg" value="@studioImage">
+                <label asp-for="ImageUrl">URL изображения (альтернатива)</label>
+                <input asp-for="ImageUrl" class="form-control" placeholder="/img/gear.jpg" />
+                <span asp-validation-for="ImageUrl" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div class="form-group">
@@ -84,8 +86,9 @@
             </div>
 
             <div class="form-group">
-                <label>Описание</label>
-                <textarea name="Description" class="form-control" rows="5">@studioDescription</textarea>
+                <label asp-for="Description">Описание</label>
+                <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="Description" class="text-danger" style="font-size: 14px; color: #ff4d4d;"></span>
             </div>
 
             <div style="display: flex; gap: 16px; margin-top: 32px;">
@@ -133,3 +136,8 @@
         });
     }
 </script>
+
+@* Клиентская валидация средствами jQuery *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

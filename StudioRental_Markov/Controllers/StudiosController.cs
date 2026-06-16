@@ -20,7 +20,34 @@ namespace StudioRental_Markov.Controllers
             _db = db;
             _logging = logging; 
         }
+        /// <summary>
+        /// Получение изображения студии
+        /// </summary>
+        [HttpGet("{id}/image")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetImage(int id)
+        {
+            var studio = await _db.Studios.FindAsync(id);
+            if (studio == null)
+            {
+                return NotFound();
+            }
 
+            if (studio.ImageData != null && studio.ImageContentType != null)
+            {
+                return File(studio.ImageData, studio.ImageContentType);
+            }
+
+            // Возвращаем изображение-заглушку
+            var defaultImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "studio-default.jpg");
+            if (System.IO.File.Exists(defaultImagePath))
+            {
+                var defaultImage = await System.IO.File.ReadAllBytesAsync(defaultImagePath);
+                return File(defaultImage, "image/jpeg");
+            }
+
+            return NotFound();
+        }
         /// <summary>
         /// Получение списка всех доступных студий с информацией об их владельцах.
         /// Доступно без авторизации.
@@ -285,35 +312,5 @@ namespace StudioRental_Markov.Controllers
 
             return Ok(new { message = "Изображение загружено" });
         }
-
-        /// <summary>
-        /// Получение изображения студии
-        /// </summary>
-        [HttpGet("{id}/image")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetImage(int id)
-        {
-            var studio = await _db.Studios.FindAsync(id);
-            if (studio == null)
-            {
-                return NotFound();
-            }
-
-            if (studio.ImageData != null && studio.ImageContentType != null)
-            {
-                return File(studio.ImageData, studio.ImageContentType);
-            }
-
-            // Возвращаем изображение-заглушку
-            var defaultImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "studio-default.jpg");
-            if (System.IO.File.Exists(defaultImagePath))
-            {
-                var defaultImage = await System.IO.File.ReadAllBytesAsync(defaultImagePath);
-                return File(defaultImage, "image/jpeg");
-            }
-
-            return NotFound();
-        }
-
     }
 }

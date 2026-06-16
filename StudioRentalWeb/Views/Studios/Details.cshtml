@@ -2,13 +2,19 @@
 
 @{
     ViewData["Title"] = Model?.Name ?? "Студия";
-    var studio = Model;
-    var studioName = studio?.Name ?? "";
-    var studioAddress = studio?.Address ?? "";
-    var studioPrice = studio?.PricePerHour ?? 0;
-    var studioPriceFormatted = studioPrice.ToString("N0");
-    var studioImage = (!string.IsNullOrEmpty(studio?.ImageUrl) ? studio.ImageUrl : "/img/gear.jpg");
-    var studioDescription = studio?.Description ?? "Профессиональная студия звукозаписи с новейшим оборудованием. Идеально подходит для записи вокала, инструментов и сведения.";
+
+    // Безопасное извлечение данных (защита от NullReferenceException)
+    var studioName = Model?.Name ?? "Без названия";
+    var studioAddress = Model?.Address ?? "Адрес не указан";
+    var studioPriceFormatted = (Model?.PricePerHour ?? 0).ToString("N0");
+    var studioId = Model?.Id ?? 0;
+
+    // Заменяем захардкоженный localhost на относительный путь
+    var studioImage = $"/api/Studios/{studioId}/image";
+
+    var studioDescription = !string.IsNullOrEmpty(Model?.Description)
+        ? Model.Description
+        : "Профессиональная студия звукозаписи с новейшим оборудованием. Идеально подходит для записи вокала, инструментов и сведения.";
 }
 
 <div class="container">
@@ -26,26 +32,34 @@
         <!-- Gallery Card -->
         <div class="bento-card card-large">
             <div class="studio-image" style="height: 300px;">
-                <img src="@studioImage" alt="@studioName" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="https://localhost:7175/api/Studios/@studioId/image" alt="@studioName"
+                     style="width: 100%; height: 100%; object-fit: cover;"
+                     onerror="this.src='/img/studio1.jpg'">
             </div>
         </div>
 
         <!-- Booking Card -->
         <div class="bento-card card-medium">
             <h3 style="margin-bottom: 20px;">Забронировать</h3>
-            <form method="post" action="/Bookings/Create">
-                <input type="hidden" name="studioId" value="@studio?.Id">
+
+            @* Вывод серверных ошибок валидации, если бронирование не прошло *@
+            <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom: 15px; font-size: 14px; color: #ff4d4d;"></div>
+
+            <form method="post" action="/Bookings/Create" id="bookingForm">
+                <input type="hidden" name="studioId" value="@studioId">
 
                 <div class="form-group">
                     <label>Дата и время начала</label>
-                    <input type="datetime-local" name="startTime" class="form-control" required min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
+                    @* Динамическое ограничение "min" через ISO-формат *@
+                    <input type="datetime-local" name="startTime" class="form-control" required
+                           min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
                 </div>
 
                 <div class="form-group">
                     <label>Дата и время окончания</label>
-                    <input type="datetime-local" name="endTime" class="form-control" required min="@DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm")">
+                    <input type="datetime-local" name="endTime" class="form-control" required
+                           min="@DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm")">
                 </div>
-
 
                 <button type="submit" class="btn btn-accent btn-block" style="margin-top: 20px;">Забронировать сейчас</button>
             </form>
@@ -60,7 +74,7 @@
 </div>
 
 <script>
-    // Slot selection
+    // Поиск элементов слотов (опционально, если они рендерятся на странице)
     var slots = document.querySelectorAll('.slot.available');
     for (var i = 0; i < slots.length; i++) {
         slots[i].addEventListener('click', function() {
@@ -72,38 +86,58 @@
             this.classList.add('active');
             this.style.background = 'rgba(0, 255, 102, 0.2)';
 
-            // Set time to datetime inputs
-            var time = this.textContent;
-            var today = new Date().toISOString().slice(0, 10);
+            var time = this.textContent.trim();
+            // Получаем локальную дату в формате YYYY-MM-DD с учетом таймзоны пользователя
+            var now = new Date();
+            var offset = now.getTimezoneOffset() * 60000;
+            var localISOTime = (new Date(now - offset)).toISOString().slice(0, 10);
+
             var startInput = document.querySelector('input[name="startTime"]');
             if (startInput) {
-                startInput.value = today + 'T' + time + ':00';
+                startInput.value = localISOTime + 'T' + time;
             }
         });
     }
-    document.querySelector('form').addEventListener('submit', function(e) {
-        var start = new Date(this.querySelector('[name="startTime"]').value);
-        var end = new Date(this.querySelector('[name="endTime"]').value);
-        var now = new Date();
 
-        if (start < now) {
-            showNotification('Нельзя выбрать время в прошлом', 'error');
-            e.preventDefault();
-            return false;
-        }
+    // Валидация отправки формы
+    var form = document.getElementById('bookingForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            var startVal = this.querySelector('[name="startTime"]').value;
+            var endVal = this.querySelector('[name="endTime"]').value;
 
-        if (end <= start) {
-            showNotification('Время окончания должно быть позже начала', 'error');
-            e.preventDefault();
-            return false;
-        }
+            if (!startVal || !endVal) {
+                alert('Пожалуйста, заполните обе даты.');
+                e.preventDefault();
+                return false;
+            }
 
-        if ((end - start) < 60 * 60 * 1000) {
-            showNotification('Минимальная длительность бронирования - 1 час', 'error');
-            e.preventDefault();
-            return false;
-        }
-    });
+            var start = new Date(startVal);
+            var end = new Date(endVal);
+            var now = new Date();
+
+            // Сбрасываем секунды для честного сравнения минут
+            now.setSeconds(0, 0);
+
+            if (start < now) {
+                alert('Нельзя выбрать время в прошлом');
+                e.preventDefault();
+                return false;
+            }
+
+            if (end <= start) {
+                alert('Время окончания должно быть позже начала');
+                e.preventDefault();
+                return false;
+            }
+
+            if ((end - start) < 60 * 60 * 1000) {
+                alert('Минимальная длительность бронирования — 1 час');
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
 </script>
 
 <style>
