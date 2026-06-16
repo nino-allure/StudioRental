@@ -90,13 +90,16 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
-            var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/register", new
+            // ВАЖНО: Имена свойств должны точно совпадать с RegisterRequestDto на бэкенде
+            var registerData = new
             {
                 email = model.Email,
                 password = model.Password,
                 fullName = model.FullName,
                 phone = model.Phone ?? ""
-            });
+            };
+
+            var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/register", registerData);
 
             if (apiError != null)
             {
@@ -118,7 +121,6 @@ namespace StudioRentalWeb.Controllers
             HttpContext.Session.SetString("JwtToken", response.Token);
 
             _notifications.AddSuccess(this, "Регистрация прошла успешно!");
-
             return RedirectToAction("Index", "Home");
         }
 
@@ -127,6 +129,61 @@ namespace StudioRentalWeb.Controllers
             HttpContext.Session.Clear();
             _notifications.AddInfo(this, "Вы вышли из системы");
             return RedirectToAction("Login", "Account");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            if (HttpContext.Session.GetString("UserId") == null)
+                return RedirectToAction("Login", "Account");
+
+            var userId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
+            var (user, error) = await _api.GetAsync<dynamic>($"Users/{userId}");
+
+            if (error != null || user == null)
+            {
+                _notifications.AddError(this, "Не удалось загрузить данные профиля");
+                return RedirectToAction("Index", "Home");
+            }
+
+            var model = new ProfileViewModel
+            {
+                FullName = user.fullName ?? user.FullName ?? "",
+                Email = user.email ?? user.Email ?? "",
+                Phone = user.phone ?? user.Phone
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Profile(ProfileViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                foreach (var modelError in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    _notifications.AddError(this, modelError.ErrorMessage);
+                }
+                return View(model);
+            }
+
+            var (success, error) = await _api.PutAsync("Users/profile", new
+            {
+                fullName = model.FullName,
+                email = model.Email,
+                phone = model.Phone ?? ""
+            });
+
+            if (error != null)
+            {
+                _notifications.AddError(this, error.Message ?? "Ошибка при обновлении профиля");
+                return View(model);
+            }
+
+            HttpContext.Session.SetString("UserName", model.FullName);
+            _notifications.AddSuccess(this, "Профиль успешно обновлен!");
+            return RedirectToAction("Profile");
         }
     }
 }

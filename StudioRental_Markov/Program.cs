@@ -25,25 +25,29 @@ builder.Services.AddSwaggerGen(options =>
 {
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
-    options.IncludeXmlComments(xmlPath);
-    options.AddSecurityDefinition("Bearer", new global::Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = global::Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
-        In = global::Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "¬ведите JWT токен"
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "¬ведите JWT токен в формате: Bearer {token}"
     });
 
-    options.AddSecurityRequirement(new global::Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
-            new global::Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
-                Reference = new global::Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
                 {
-                    Type = global::Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
@@ -75,30 +79,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                       "Server=localhost;Database=StudioRental;User=root;Password=;";
+                        "Server=localhost;Database=StudioRental;User=root;Password=;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddScoped<JwtService>();
-
 builder.Services.AddScoped<ExcelExportService>();
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LoggingService>();
 
 var app = builder.Build();
 
 app.UseCors("AllowAll");
-
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
-app.UseMiddleware<StudioRental_Markov.Middlewares.GlobalLoggingMiddleware>();
-
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<StudioRental_Markov.Middlewares.GlobalLoggingMiddleware>();
 
 app.MapControllers();
 

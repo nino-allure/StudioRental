@@ -36,8 +36,14 @@ namespace StudioRentalWeb.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(int studioId, DateTime startTime, DateTime endTime)
+        public async Task<IActionResult> Create(BookingCreateViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                _notifications.AddError(this, "Некорректные данные бронирования");
+                return RedirectToAction("Details", "Studios", new { id = model.StudioId });
+            }
+
             if (HttpContext.Session.GetString("UserId") == null)
             {
                 return RedirectToAction("Login", "Account");
@@ -45,25 +51,23 @@ namespace StudioRentalWeb.Controllers
 
             var userId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
 
-            var booking = new
+            // Отправляем только необходимые данные. Status и CreatedAt рассчитаются на сервере.
+            var bookingPayload = new
             {
-                CustomerId = userId,
-                StudioId = studioId,
-                StartTime = startTime,
-                EndTime = endTime,
-                Status = "Pending",
-                CreatedAt = DateTime.Now
+                customerId = userId,
+                studioId = model.StudioId,
+                startTime = model.StartTime,
+                endTime = model.EndTime
             };
 
-            var (result, error) = await _api.PostAsync<Booking>("Bookings", booking);
-
+            var (result, error) = await _api.PostAsync<Booking>("Bookings", bookingPayload);
             if (error != null)
             {
                 _notifications.AddError(this, error.Message ?? "Ошибка при создании бронирования");
-                return RedirectToAction("Details", "Studios", new { id = studioId });
+                return RedirectToAction("Details", "Studios", new { id = model.StudioId });
             }
 
-            _notifications.AddSuccess(this, "Бронирование создано успешно!");
+            _notifications.AddSuccess(this, "Бронирование создано успешно и ожидает подтверждения!");
             return RedirectToAction("MyBookings", "Bookings");
         }
 
@@ -75,7 +79,6 @@ namespace StudioRentalWeb.Controllers
             }
 
             var (success, error) = await _api.PutAsync($"Bookings/{id}/cancel", new { });
-
             if (error != null)
             {
                 _notifications.AddError(this, error.Message ?? "Ошибка при отмене бронирования");

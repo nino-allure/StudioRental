@@ -6,6 +6,9 @@ using StudioRental_Markov.Services;
 
 namespace StudioRental_Markov.Controllers
 {
+    /// <summary>
+    /// Контроллер для управления аутентификацией и регистрацией пользователей.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
@@ -22,24 +25,31 @@ namespace StudioRental_Markov.Controllers
         }
 
         /// <summary>
-        /// Регистрация нового пользователя
+        /// Регистрация нового пользователя в системе.
         /// </summary>
+        /// <param name="request">Данные для регистрации (Email, Password, FullName, Phone).</param>
+        /// <returns>JWT токен и данные пользователя при успешной регистрации.</returns>
+        /// <response code="200">Пользователь успешно зарегистрирован.</response>
+        /// <response code="400">Ошибка валидации данных или Email уже занят.</response>
         [HttpPost("register")]
+        [ProducesResponseType(typeof(LoginResponseDto), 200)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            await _logging.LogAuthAsync("Register", $"Попытка регистрации для email: {request.Email}", false);
-
-            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.FullName))
+            if (!ModelState.IsValid)
             {
-                await _logging.LogAuthAsync("Register", $"Ошибка регистрации: не все поля заполнены для {request.Email}", false);
-                return BadRequest(new { message = "Все поля обязательны" });
+                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                await _logging.LogAuthAsync("Register", $"Ошибка валидации при регистрации: {errors}", false);
+                return BadRequest(new { message = errors });
             }
+
+            await _logging.LogAuthAsync("Register", $"Попытка регистрации для email: {request.Email}", false);
 
             var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (existingUser != null)
             {
                 await _logging.LogAuthAsync("Register", $"Ошибка регистрации: email {request.Email} уже используется", false);
-                return BadRequest(new { message = "Email уже используется" });
+                return BadRequest(new { message = "Этот email уже зарегистрирован" });
             }
 
             var user = new User
@@ -56,9 +66,7 @@ namespace StudioRental_Markov.Controllers
             await _db.SaveChangesAsync();
 
             var token = _jwtService.GenerateToken(user);
-
-            await _logging.LogAuthAsync("Register", $"Пользователь {request.Email} успешно зарегистрирован", true,
-                $"UserId: {user.Id}, FullName: {user.FullName}");
+            await _logging.LogAuthAsync("Register", $"Пользователь {request.Email} успешно зарегистрирован", true, $"UserId: {user.Id}");
 
             return Ok(new LoginResponseDto
             {
@@ -71,31 +79,36 @@ namespace StudioRental_Markov.Controllers
         }
 
         /// <summary>
-        /// Вход пользователя в систему
+        /// Вход в систему (аутентификация) по Email и паролю.
         /// </summary>
+        /// <param name="request">Учетные данные пользователя (Email, Password).</param>
+        /// <returns>JWT токен и данные пользователя.</returns>
+        /// <response code="200">Успешный вход в систему.</response>
+        /// <response code="400">Ошибка валидации данных.</response>
+        /// <response code="401">Неверный email или пароль.</response>
         [HttpPost("login")]
+        [ProducesResponseType(typeof(LoginResponseDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return BadRequest(new { message = errors });
+            }
+
             await _logging.LogAuthAsync("Login", $"Попытка входа для email: {request.Email}", false);
 
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (user == null)
+            if (user == null || user.Password != request.Password)
             {
-                await _logging.LogAuthAsync("Login", $"Неудачная попытка входа: пользователь {request.Email} не найден", false);
-                return Unauthorized(new { message = "Неверный email или пароль" });
-            }
-
-            if (user.Password != request.Password)
-            {
-                await _logging.LogAuthAsync("Login", $"Неудачная попытка входа: неверный пароль для {request.Email}", false,
-                    $"UserId: {user.Id}");
+                await _logging.LogAuthAsync("Login", $"Неудачная попытка входа: {request.Email}", false);
                 return Unauthorized(new { message = "Неверный email или пароль" });
             }
 
             var token = _jwtService.GenerateToken(user);
-
-            await _logging.LogAuthAsync("Login", $"Пользователь {request.Email} успешно вошел в систему", true,
-                $"UserId: {user.Id}, Role: {user.Role}");
+            await _logging.LogAuthAsync("Login", $"Пользователь {request.Email} успешно вошел в систему", true, $"UserId: {user.Id}");
 
             return Ok(new LoginResponseDto
             {

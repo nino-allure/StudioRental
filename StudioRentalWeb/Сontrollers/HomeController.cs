@@ -6,13 +6,10 @@ namespace StudioRentalWeb.Controllers
     {
         public IActionResult Index()
         {
-            if (HttpContext.Session.GetString("UserId") == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
+            // Главная страница теперь публичная. Данные о пользователе подставляются, если он вошел.
             ViewBag.UserName = HttpContext.Session.GetString("UserName");
             ViewBag.UserRole = HttpContext.Session.GetString("UserRole");
+            ViewBag.IsLoggedIn = HttpContext.Session.GetString("UserId") != null;
             return View();
         }
 

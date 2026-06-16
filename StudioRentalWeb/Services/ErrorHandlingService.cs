@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Net;
+using System.Text.Json;
 
 namespace StudioRentalWeb.Services
 {
@@ -16,10 +17,7 @@ namespace StudioRentalWeb.Services
 
         public async Task<ApiErrorResponse> HandleErrorResponse(HttpResponseMessage response)
         {
-            var errorResponse = new ApiErrorResponse
-            {
-                StatusCode = (int)response.StatusCode
-            };
+            var errorResponse = new ApiErrorResponse { StatusCode = (int)response.StatusCode };
 
             try
             {
@@ -39,7 +37,15 @@ namespace StudioRentalWeb.Services
                             }
                             else
                             {
-                                errorResponse.Message = content;
+                                using var doc = JsonDocument.Parse(content);
+                                if (doc.RootElement.TryGetProperty("message", out var messageElement))
+                                {
+                                    errorResponse.Message = messageElement.GetString();
+                                }
+                                else
+                                {
+                                    errorResponse.Message = content;
+                                }
                             }
                         }
                         catch
@@ -63,11 +69,6 @@ namespace StudioRentalWeb.Services
                         errorResponse.Message = "Запрашиваемый ресурс не найден";
                         break;
 
-                    case HttpStatusCode.Conflict:
-                        errorResponse.Title = "Конфликт данных";
-                        errorResponse.Message = content;
-                        break;
-
                     case HttpStatusCode.InternalServerError:
                         errorResponse.Title = "Внутренняя ошибка сервера";
                         errorResponse.Message = "Произошла ошибка на сервере. Попробуйте позже";
@@ -81,7 +82,7 @@ namespace StudioRentalWeb.Services
             }
             catch
             {
-                errorResponse.Message = "Произошла неизвестная ошибка";
+                errorResponse.Message = "Произошла неизвестная ошибка при обработке ответа сервера";
             }
 
             return errorResponse;
@@ -90,13 +91,7 @@ namespace StudioRentalWeb.Services
 
     public class NotificationService
     {
-        public enum NotificationType
-        {
-            Success,
-            Error,
-            Warning,
-            Info
-        }
+        public enum NotificationType { Success, Error, Warning, Info }
 
         public void AddNotification(Controller controller, string message, NotificationType type)
         {
@@ -105,24 +100,9 @@ namespace StudioRentalWeb.Services
             controller.TempData[$"{key}_type"] = type.ToString();
         }
 
-        public void AddSuccess(Controller controller, string message)
-        {
-            AddNotification(controller, message, NotificationType.Success);
-        }
-
-        public void AddError(Controller controller, string message)
-        {
-            AddNotification(controller, message, NotificationType.Error);
-        }
-
-        public void AddWarning(Controller controller, string message)
-        {
-            AddNotification(controller, message, NotificationType.Warning);
-        }
-
-        public void AddInfo(Controller controller, string message)
-        {
-            AddNotification(controller, message, NotificationType.Info);
-        }
+        public void AddSuccess(Controller controller, string message) => AddNotification(controller, message, NotificationType.Success);
+        public void AddError(Controller controller, string message) => AddNotification(controller, message, NotificationType.Error);
+        public void AddWarning(Controller controller, string message) => AddNotification(controller, message, NotificationType.Warning);
+        public void AddInfo(Controller controller, string message) => AddNotification(controller, message, NotificationType.Info);
     }
 }

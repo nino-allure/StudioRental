@@ -8,22 +8,25 @@ namespace StudioRental_Markov.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Дата и время начала обязательны")]
         public DateTime StartTime { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Дата и время окончания обязательны")]
         public DateTime EndTime { get; set; }
 
         [Column(TypeName = "decimal(10,2)")]
+        [Range(0, 1000000, ErrorMessage = "Некорректная стоимость")]
         public decimal TotalPrice { get; set; }
 
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; 
+        public string Status { get; set; } = "Pending";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        [Required]
         public int CustomerId { get; set; }
 
+        [Required]
         public int StudioId { get; set; }
 
         [ForeignKey(nameof(CustomerId))]

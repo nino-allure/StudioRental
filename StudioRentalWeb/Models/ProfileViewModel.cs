@@ -2,23 +2,16 @@
 
 namespace StudioRentalWeb.Models
 {
-    public class User
+    public class ProfileViewModel
     {
-        public int Id { get; set; }
+        [Required(ErrorMessage = "ФИО обязательно")]
+        public string FullName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email обязателен")]
         [EmailAddress(ErrorMessage = "Неверный формат email")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "ФИО обязательно")]
-        public string FullName { get; set; } = string.Empty;
-
         [Phone(ErrorMessage = "Неверный формат телефона")]
         public string? Phone { get; set; }
-
-        [Required]
-        public string Role { get; set; } = "User";
-
-        public DateTime CreatedAt { get; set; }
     }
 }

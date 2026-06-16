@@ -8,21 +8,24 @@ namespace StudioRental_Markov.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Email обязателен")]
+        [EmailAddress(ErrorMessage = "Неверный формат email")]
         [MaxLength(100)]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Пароль обязателен")]
         [MaxLength(255)]
         public string Password { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "ФИО обязательно")]
         [MaxLength(100)]
         public string FullName { get; set; } = string.Empty;
 
+        [Phone(ErrorMessage = "Неверный формат телефона")]
         [MaxLength(20)]
         public string? Phone { get; set; }
 
+        [Required]
         [MaxLength(50)]
         public string Role { get; set; } = "User";
 

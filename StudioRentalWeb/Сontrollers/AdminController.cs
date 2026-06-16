@@ -24,14 +24,11 @@ namespace StudioRentalWeb.Controllers
 
         public async Task<IActionResult> Index()
         {
-            if (!IsAdmin())
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
-            var (users, usersError) = await _api.GetAsync<List<User>>("Users");
-            var (studios, studiosError) = await _api.GetAsync<List<Studio>>("Studios");
-            var (bookings, bookingsError) = await _api.GetAsync<List<Booking>>("Bookings");
+            var (users, _) = await _api.GetAsync<List<User>>("Users");
+            var (studios, _) = await _api.GetAsync<List<Studio>>("Studios");
+            var (bookings, _) = await _api.GetAsync<List<Booking>>("Bookings");
 
             ViewBag.UsersCount = users?.Count ?? 0;
             ViewBag.StudiosCount = studios?.Count ?? 0;
@@ -40,58 +37,34 @@ namespace StudioRentalWeb.Controllers
             return View();
         }
 
-        // Список пользователей
         public async Task<IActionResult> Users()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (users, error) = await _api.GetAsync<List<User>>("Users");
-
-            if (error != null)
-            {
-                _notifications.AddError(this, error.Message ?? "Ошибка при загрузке пользователей");
-                return View(new List<User>());
-            }
-
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при загрузке пользователей");
             return View(users ?? new List<User>());
         }
 
-        // Удаление пользователя
+        [HttpPost]
         public async Task<IActionResult> DeleteUser(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (success, error) = await _api.DeleteAsync($"Users/{id}");
 
-            if (error != null)
-            {
-                _notifications.AddError(this, error.Message ?? "Ошибка при удалении пользователя");
-            }
-            else
-            {
-                _notifications.AddSuccess(this, "Пользователь удален");
-            }
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при удалении пользователя");
+            else _notifications.AddSuccess(this, "Пользователь удален");
 
             return RedirectToAction("Users");
         }
 
-        // Список студий
         public async Task<IActionResult> Studios()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (studios, error) = await _api.GetAsync<List<Studio>>("Studios");
-
-            if (error != null)
-            {
-                _notifications.AddError(this, error.Message ?? "Ошибка при загрузке студий");
-                return View(new List<Studio>());
-            }
-
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при загрузке студий");
             return View(studios ?? new List<Studio>());
         }
 
-        // Форма добавления студии
         [HttpGet]
         public IActionResult CreateStudio()
         {
@@ -99,24 +72,20 @@ namespace StudioRentalWeb.Controllers
             return View();
         }
 
-        // Добавление студии
         [HttpPost]
         public async Task<IActionResult> CreateStudio(StudioViewModel model, IFormFile? image)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!ModelState.IsValid) return View(model);
 
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
+            // Свойства должны точно совпадать с StudioCreateDto на бэкенде
             var studioData = new
             {
                 name = model.Name,
                 description = model.Description ?? "",
                 address = model.Address,
                 pricePerHour = model.PricePerHour,
-                imageUrl = model.ImageUrl
+                imageUrl = model.ImageUrl ?? ""
             };
 
             var (result, error) = await _api.PostWithFileAsync<Studio>("Studios", studioData, image);
@@ -131,34 +100,23 @@ namespace StudioRentalWeb.Controllers
             return RedirectToAction("Studios");
         }
 
-        // Удаление студии
         [HttpPost]
         public async Task<IActionResult> DeleteStudio(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (success, error) = await _api.DeleteAsync($"Studios/{id}");
 
-            if (error != null)
-            {
-                _notifications.AddError(this, error.Message ?? "Ошибка при удалении студии");
-            }
-            else
-            {
-                _notifications.AddSuccess(this, "Студия удалена");
-            }
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при удалении студии");
+            else _notifications.AddSuccess(this, "Студия удалена");
 
             return RedirectToAction("Studios");
         }
-        // Редактирование студии
+
         [HttpGet]
         [Route("Admin/EditStudio/{id}")]
         public async Task<IActionResult> EditStudio(int id)
         {
-            Console.WriteLine($"=== EDIT STUDIO GET CALLED === ID: {id}");
-
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (studio, apiError) = await _api.GetAsync<Studio>($"Studios/{id}");
 
             if (apiError != null || studio == null)
@@ -179,26 +137,21 @@ namespace StudioRentalWeb.Controllers
 
             return View(model);
         }
+
         [HttpPost]
         public async Task<IActionResult> EditStudio(StudioViewModel model, IFormFile? image, bool? removeImage)
         {
-            Console.WriteLine($"EDIT STUDIO POST CALLED ID: {model.Id}");
-
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!ModelState.IsValid) return View(model);
 
-            if (!ModelState.IsValid)
-            {
-                Console.WriteLine("Model invalid!");
-                return View(model);
-            }
-
+            // Свойства должны точно совпадать с StudioUpdateDto на бэкенде
             var studioData = new
             {
                 name = model.Name,
                 description = model.Description ?? "",
                 address = model.Address,
                 pricePerHour = model.PricePerHour,
-                imageUrl = model.ImageUrl,
+                imageUrl = model.ImageUrl ?? "",
                 removeImage = removeImage ?? false
             };
 
@@ -206,169 +159,77 @@ namespace StudioRentalWeb.Controllers
 
             if (apiError != null)
             {
-                Console.WriteLine($"API Error: {apiError.Message}");
                 _notifications.AddError(this, apiError.Message ?? "Ошибка при обновлении студии");
                 return View(model);
             }
 
-            Console.WriteLine("Studio updated successfully!");
             _notifications.AddSuccess(this, $"Студия \"{model.Name}\" успешно обновлена");
             return RedirectToAction("Studios");
         }
-        // Список бронирований
+
         public async Task<IActionResult> Bookings()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
+            var (bookings, error) = await _api.GetAsync<List<Booking>>("Bookings");
 
-            try
-            {
-                var (bookings, error) = await _api.GetAsync<List<Booking>>("Bookings");
-
-                if (error != null)
-                {
-                    _notifications.AddError(this, error.Message ?? "Ошибка при загрузке бронирований");
-                    return View(new List<Booking>());
-                }
-
-                return View(bookings ?? new List<Booking>());
-            }
-            catch (Exception ex)
-            {
-                _notifications.AddError(this, $"Ошибка загрузки: {ex.Message}");
-                return View(new List<Booking>());
-            }
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при загрузке бронирований");
+            return View(bookings ?? new List<Booking>());
         }
-        // Подтверждение бронирования
+
+        [HttpPost]
         public async Task<IActionResult> ConfirmBooking(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (success, error) = await _api.PutAsync($"Bookings/{id}/confirm", new { });
 
-            if (error != null)
-            {
-                _notifications.AddError(this, error.Message ?? "Ошибка при подтверждении бронирования");
-            }
-            else
-            {
-                _notifications.AddSuccess(this, "Бронирование подтверждено");
-            }
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при подтверждении");
+            else _notifications.AddSuccess(this, "Бронирование подтверждено");
 
             return RedirectToAction("Bookings");
         }
-        // Отмена бронирования
+
+        [HttpPost]
         public async Task<IActionResult> CancelBooking(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (success, error) = await _api.PutAsync($"Bookings/{id}/cancel", new { });
 
-            if (error != null)
-            {
-                _notifications.AddError(this, error.Message ?? "Ошибка при отмене бронирования");
-            }
-            else
-            {
-                _notifications.AddSuccess(this, "Бронирование отменено");
-            }
+            if (error != null) _notifications.AddError(this, error.Message ?? "Ошибка при отмене");
+            else _notifications.AddSuccess(this, "Бронирование отменено");
 
             return RedirectToAction("Bookings");
         }
+
         public async Task<IActionResult> ExportStudios()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (data, error) = await _api.DownloadFileAsync("Export/studios");
-
-            if (error != null || data == null)
-            {
-                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте");
-                return RedirectToAction("Studios");
-            }
-
-            var fileName = $"Студии_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            if (error != null || data == null) return RedirectToAction("Studios");
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Студии_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
         }
 
         public async Task<IActionResult> ExportBookings()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (data, error) = await _api.DownloadFileAsync("Export/bookings");
-
-            if (error != null || data == null)
-            {
-                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте");
-                return RedirectToAction("Bookings");
-            }
-
-            var fileName = $"Бронирования_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            if (error != null || data == null) return RedirectToAction("Bookings");
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Бронирования_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
         }
 
         public async Task<IActionResult> ExportUsers()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (data, error) = await _api.DownloadFileAsync("Export/users");
-
-            if (error != null || data == null)
-            {
-                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте");
-                return RedirectToAction("Users");
-            }
-
-            var fileName = $"Пользователи_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            if (error != null || data == null) return RedirectToAction("Users");
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Пользователи_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
         }
 
         public async Task<IActionResult> ExportStudioReport(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var (data, error) = await _api.DownloadFileAsync($"Export/studio-report/{id}");
-
-            if (error != null || data == null)
-            {
-                _notifications.AddError(this, error?.Message ?? "Ошибка при экспорте отчета");
-                return RedirectToAction("Studios");
-            }
-
-            var fileName = $"Отчет_по_студии_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Logs()
-        {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-            return View();
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetLogs(string? level, string? category, DateTime? from, DateTime? to, int page = 1, int pageSize = 50)
-        {
-            if (!IsAdmin()) return Unauthorized();
-
-            var (data, error) = await _api.GetAsync<dynamic>($"Logs?level={level}&category={category}&from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}&page={page}&pageSize={pageSize}");
-
-            if (error != null)
-                return Json(new { logs = new List<object>(), totalCount = 0 });
-
-            return Json(data);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetLogsStats()
-        {
-            if (!IsAdmin()) return Unauthorized();
-
-            var (data, error) = await _api.GetAsync<dynamic>("Logs/stats");
-
-            if (error != null)
-                return Json(new { totalLogs = 0, errorsLast24h = 0 });
-
-            return Json(data);
+            if (error != null || data == null) return RedirectToAction("Studios");
+            return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Отчет_студия_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
         }
     }
 }
