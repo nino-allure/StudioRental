@@ -21,7 +21,7 @@
                 <!-- Блок для отображения общих ошибок (например, "Email уже занят") -->
                 <div asp-validation-summary="ModelOnly" class="alert alert-error" style="margin-bottom: 20px;"></div>
 
-                <form method="post" asp-action="Register">
+                <form method="post" asp-action="Register" asp-controller="Account">
                     <div class="form-group">
                         <label asp-for="FullName">ФИО</label>
                         <input asp-for="FullName" class="form-control" placeholder="Иванов Иван Иванович" />
@@ -57,7 +57,7 @@
                 
                 <div class="auth-footer">
                     <p>Уже есть аккаунт? <a href="/Account/Login">Войти</a></p>
-                </div
+                </div>
             </div>
         </div>
     </div>

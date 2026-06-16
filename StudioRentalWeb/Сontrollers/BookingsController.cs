@@ -40,7 +40,11 @@ namespace StudioRentalWeb.Controllers
         {
             if (!ModelState.IsValid)
             {
-                _notifications.AddError(this, "Некорректные данные бронирования");
+                // Добавляем детали ошибок в уведомление
+                var errors = string.Join("; ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+                _notifications.AddError(this, $"Ошибка валидации: {errors}");
                 return RedirectToAction("Details", "Studios", new { id = model.StudioId });
             }
 
@@ -51,16 +55,17 @@ namespace StudioRentalWeb.Controllers
 
             var userId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
 
-            // Отправляем только необходимые данные. Status и CreatedAt рассчитаются на сервере.
+            // ИСПРАВЛЕНО: Используем PascalCase для совместимости с бэкендом
             var bookingPayload = new
             {
-                customerId = userId,
-                studioId = model.StudioId,
-                startTime = model.StartTime,
-                endTime = model.EndTime
+                CustomerId = userId,  // Было: customerId
+                StudioId = model.StudioId,
+                StartTime = model.StartTime,
+                EndTime = model.EndTime
             };
 
             var (result, error) = await _api.PostAsync<Booking>("Bookings", bookingPayload);
+
             if (error != null)
             {
                 _notifications.AddError(this, error.Message ?? "Ошибка при создании бронирования");
@@ -70,7 +75,6 @@ namespace StudioRentalWeb.Controllers
             _notifications.AddSuccess(this, "Бронирование создано успешно и ожидает подтверждения!");
             return RedirectToAction("MyBookings", "Bookings");
         }
-
         public async Task<IActionResult> Cancel(int id)
         {
             if (HttpContext.Session.GetString("UserId") == null)

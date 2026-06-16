@@ -66,20 +66,33 @@ namespace StudioRentalWeb.Services
             try
             {
                 AddAuthorizationHeader();
-                var json = JsonConvert.SerializeObject(data);
+                var json = JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                {
+                    ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver()
+                });
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
+
                 var response = await _httpClient.PostAsync($"{_baseUrl}/{endpoint}", content);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
+                    if (string.IsNullOrEmpty(responseContent))
+                        return (default, null);
+
                     return (JsonConvert.DeserializeObject<T>(responseContent), null);
                 }
+
                 return (default, await _errorHandling.HandleErrorResponse(response));
             }
             catch (Exception ex)
             {
-                return (default, new ErrorHandlingService.ApiErrorResponse { StatusCode = 0, Title = "Ошибка", Message = ex.Message });
+                return (default, new ErrorHandlingService.ApiErrorResponse
+                {
+                    StatusCode = 0,
+                    Title = "Ошибка соединения",
+                    Message = ex.Message
+                });
             }
         }
 
@@ -149,6 +162,7 @@ namespace StudioRentalWeb.Services
                     var value = prop.GetValue(data);
                     if (value != null)
                     {
+                        // Используем имя свойства как есть (PascalCase для совместимости с DTO на бэкенде)
                         formData.Add(new StringContent(value.ToString() ?? ""), prop.Name);
                     }
                 }

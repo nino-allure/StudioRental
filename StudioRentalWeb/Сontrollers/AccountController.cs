@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using StudioRentalWeb.Models;
 using StudioRentalWeb.Services;
 
@@ -33,11 +34,14 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
-            var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/login", new
+            // ИСПРАВЛЕНИЕ: Используем PascalCase для совместимости с LoginRequestDto
+            var loginData = new
             {
-                email = model.Email,
-                password = model.Password
-            });
+                Email = model.Email,
+                Password = model.Password
+            };
+
+            var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/login", loginData);
 
             if (apiError != null)
             {
@@ -90,13 +94,12 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
-            // ВАЖНО: Имена свойств должны точно совпадать с RegisterRequestDto на бэкенде
             var registerData = new
             {
-                email = model.Email,
-                password = model.Password,
-                fullName = model.FullName,
-                phone = model.Phone ?? ""
+                Email = model.Email,
+                Password = model.Password,
+                FullName = model.FullName,
+                Phone = model.Phone ?? ""
             };
 
             var (response, apiError) = await _api.PostAsync<LoginResponseDto>("Auth/register", registerData);
@@ -138,6 +141,7 @@ namespace StudioRentalWeb.Controllers
                 return RedirectToAction("Login", "Account");
 
             var userId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
+
             var (user, error) = await _api.GetAsync<dynamic>($"Users/{userId}");
 
             if (error != null || user == null)
@@ -146,11 +150,12 @@ namespace StudioRentalWeb.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            // Исправленный доступ к свойствам - используем ToString() для безопасности
             var model = new ProfileViewModel
             {
-                FullName = user.fullName ?? user.FullName ?? "",
-                Email = user.email ?? user.Email ?? "",
-                Phone = user.phone ?? user.Phone
+                FullName = user.FullName?.ToString() ?? user.fullName?.ToString() ?? "",
+                Email = user.Email?.ToString() ?? user.email?.ToString() ?? "",
+                Phone = user.Phone?.ToString() ?? user.phone?.ToString() ?? ""
             };
 
             return View(model);
@@ -168,11 +173,12 @@ namespace StudioRentalWeb.Controllers
                 return View(model);
             }
 
+            // ИСПРАВЛЕНИЕ: Используем PascalCase для UpdateProfileDto
             var (success, error) = await _api.PutAsync("Users/profile", new
             {
-                fullName = model.FullName,
-                email = model.Email,
-                phone = model.Phone ?? ""
+                FullName = model.FullName,
+                Email = model.Email,
+                Phone = model.Phone ?? ""
             });
 
             if (error != null)

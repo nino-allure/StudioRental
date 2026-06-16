@@ -33,21 +33,8 @@
         </div>
 
         <!-- Booking Card -->
-        <div class="bento-card card-medium">
-            <h3 style="margin-bottom: 20px;">Забронировать</h3>
-            <form method="post" action="/Bookings/Create">
-                <input type="hidden" name="StudioId" value="@studio?.Id">
-                <div class="form-group">
-                    <label>Дата и время начала</label>
-                    <input type="datetime-local" name="StartTime" class="form-control" required min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
-                </div>
-                <div class="form-group">
-                    <label>Дата и время окончания</label>
-                    <input type="datetime-local" name="EndTime" class="form-control" required min="@DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm")">
-                </div>
-                <button type="submit" class="btn btn-accent btn-block" style="margin-top: 20px;">Забронировать сейчас</button>
-            </form>
-        </div>
+        if (end <= start) {
+
 
         <!-- Description Card -->
         <div class="bento-card card-small">

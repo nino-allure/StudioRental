@@ -29,23 +29,30 @@ namespace StudioRentalWeb.Services
                         errorResponse.Title = "Ошибка в данных";
                         try
                         {
-                            var errors = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(content);
-                            if (errors != null && errors.Count > 0)
+                            using var doc = JsonDocument.Parse(content);
+                            if (doc.RootElement.TryGetProperty("message", out var messageElement))
                             {
+                                errorResponse.Message = messageElement.GetString();
+                            }
+                            else if (doc.RootElement.TryGetProperty("errors", out var errorsElement))
+                            {
+                                // Если пришли ошибки валидации
+                                var errors = new Dictionary<string, List<string>>();
+                                foreach (var prop in errorsElement.EnumerateObject())
+                                {
+                                    var list = new List<string>();
+                                    foreach (var item in prop.Value.EnumerateArray())
+                                    {
+                                        list.Add(item.GetString() ?? "");
+                                    }
+                                    errors[prop.Name] = list;
+                                }
                                 errorResponse.Errors = errors;
                                 errorResponse.Message = string.Join("; ", errors.SelectMany(x => x.Value));
                             }
                             else
                             {
-                                using var doc = JsonDocument.Parse(content);
-                                if (doc.RootElement.TryGetProperty("message", out var messageElement))
-                                {
-                                    errorResponse.Message = messageElement.GetString();
-                                }
-                                else
-                                {
-                                    errorResponse.Message = content;
-                                }
+                                errorResponse.Message = content;
                             }
                         }
                         catch

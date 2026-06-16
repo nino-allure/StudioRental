@@ -78,14 +78,13 @@ namespace StudioRentalWeb.Controllers
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
             if (!ModelState.IsValid) return View(model);
 
-            // Свойства должны точно совпадать с StudioCreateDto на бэкенде
             var studioData = new
             {
-                name = model.Name,
-                description = model.Description ?? "",
-                address = model.Address,
-                pricePerHour = model.PricePerHour,
-                imageUrl = model.ImageUrl ?? ""
+                Name = model.Name,
+                Description = model.Description ?? "",
+                Address = model.Address,
+                PricePerHour = model.PricePerHour,
+                ImageUrl = model.ImageUrl ?? ""
             };
 
             var (result, error) = await _api.PostWithFileAsync<Studio>("Studios", studioData, image);
@@ -144,15 +143,14 @@ namespace StudioRentalWeb.Controllers
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
             if (!ModelState.IsValid) return View(model);
 
-            // Свойства должны точно совпадать с StudioUpdateDto на бэкенде
             var studioData = new
             {
-                name = model.Name,
-                description = model.Description ?? "",
-                address = model.Address,
-                pricePerHour = model.PricePerHour,
-                imageUrl = model.ImageUrl ?? "",
-                removeImage = removeImage ?? false
+                Name = model.Name,
+                Description = model.Description ?? "",
+                Address = model.Address,
+                PricePerHour = model.PricePerHour,
+                ImageUrl = model.ImageUrl ?? "",
+                RemoveImage = removeImage ?? false
             };
 
             var (success, apiError) = await _api.PutWithFileAsync($"Studios/{model.Id}", studioData, image);
